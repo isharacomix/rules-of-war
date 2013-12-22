@@ -14,7 +14,6 @@ except: pass
 
 # Try to import SDL
 sdl_available = False
-from core import gfx_sdl    
 try:
     from core import gfx_sdl
     sdl_available = True
