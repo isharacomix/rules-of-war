@@ -6,7 +6,6 @@ import pygame
 if pygame.font is None:
     raise Exception("Missing pygame.font module")
 
-from core import log
 
 
 # API:

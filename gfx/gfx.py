@@ -7,7 +7,7 @@
 # Try to import ASCII
 ascii_available = False
 try:
-    from core import gfx_ascii
+    from . import gfx_ascii
     ascii_available = True
 except: pass
 
@@ -15,7 +15,7 @@ except: pass
 # Try to import SDL
 sdl_available = False
 try:
-    from core import gfx_sdl
+    from . import gfx_sdl
     sdl_available = True
 except: pass
 

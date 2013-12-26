@@ -3,7 +3,7 @@
 # creating the world, parsing and writing to save files, and turning on/off
 # graphics.
 
-from core import gfx
+from gfx import gfx
 
 
 import sys
@@ -34,7 +34,7 @@ class Game(object):
     # world until we are told we don't need to anymore. If an error occurs, we
     # turn off graphics, print the traceback, and kill the program.
     def play(self):
-        gfx.start("sdl")
+        gfx.start("ascii")
 
         
         try:
