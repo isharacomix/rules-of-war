@@ -3,7 +3,7 @@
 # creating the world, parsing and writing to save files, and turning on/off
 # graphics.
 
-from gfx import gfx
+from graphics import gfx
 
 
 import sys
