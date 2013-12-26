@@ -7,15 +7,6 @@
 import curses
 
 
-# API:
-#   start()
-#   stop()
-#   mode()
-#   get_input()
-#   clear()
-#   draw(x,y,c,col)
-
-
 # The "screen" used by Curses. When "None", curses is off, and all curses
 # commands silently (safely) fail. This way, we can run games in non-interactive
 # mode.
@@ -106,12 +97,10 @@ def get_input():
         elif c in _keymap: return _keymap[c]
     return None
 
-
 # In curses, refresh just controls the framerate.
 def refresh():
     if _screen:
         curses.napms(20)
-
 
 # Clear the screen. This uses Curses' optimized erase routine, so it's not
 # necessarily inefficient.

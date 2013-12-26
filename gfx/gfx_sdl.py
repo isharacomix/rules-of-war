@@ -1,26 +1,16 @@
 # The SDL GFX module is a text-based curses-like library built on top of Pygame.
 # This should be easier for windows users to utilize. We require both pygame and
-# the optional Pygame font package.
+# the optional Pygame font package. If pygame is not available, you need to catch
+# the exception that's thrown.
 
 import pygame
 if pygame.font is None:
     raise Exception("Missing pygame.font module")
 
 
-
-# API:
-#   start()
-#   stop()
-#   mode()
-#   get_input()
-#   clear()
-#   draw(x,y,c,col)
-
-
 # The "screen" used by Pygame. These private variables serve to do some of the
-# optimization of Curses. The 'fakescreen' keeps track of cells that have not
-# changed, and the dirty list shows all of the rectangles that should be
-# updated on the screen.
+# optimization of Curses. The 'fakescreen' keeps track of cells that have been
+# changed.
 _screen = None
 _changes = {}
 _sw, _sh, _tw, _th = 0,0,0,0
@@ -173,9 +163,9 @@ def clear():
         _screen.fill((0,0,0))
         _changes = {"cleared": True}
 
-# Draw a character at X,Y. Includes boundary checking. You can also
-# include color codes. Lowercase letters are foreground, uppercase are
-# background. Use an ! for bold and ? for reverse
+# Draw a character at X,Y. You can also include color codes. Lowercase letters
+# are foreground, uppercase are background. Use an ! for bold and ? for reverse.
+# Pygame handles the matter of drawing off the screen.
 def draw(x,y,c,col=""):
     global _screen, _changes
     if _screen:

@@ -20,7 +20,7 @@ try:
 except: pass
 
 
-# API:
+# API that needs to be implemented by subsystems.
 #   start()
 #   stop()
 #   mode()
@@ -51,7 +51,6 @@ def start(mode=None):
         gfx.start()
     else:
         raise Exception("Graphics mode %s not available."%mode)
-    
 
 # Stop graphics. This turns off the display associated with the graphics mode.
 def stop():
@@ -61,31 +60,43 @@ def stop():
         gfx = None
         return report
 
-
+# Returns the mode of the graphics currently running.
 def mode():
     global gfx
     if gfx: return gfx.mode()
     else: return "None"
 
-
+# Retrieves a single unit of input as a python string. If no input, returns
+# None.
 def get_input():
     global gfx
     if gfx: return gfx.get_input()
 
-
-
+# Draws the screen and controls the framerate. Should be called exactly once
+# per frame.
 def refresh():
     global gfx
     if gfx: return gfx.refresh()
 
-
+# Clears the screen.
 def clear():
     global gfx
     if gfx: return gfx.clear()
 
-
+# Draws the character 'c' at x,y with the color code provided.
+#   Capital: Background
+#   Lowercase: Foreground
+#     x = black
+#     r = red
+#     g = green
+#     y = yellow
+#     b = blue
+#     m = magenta
+#     c = cyan
+#     w = white
+#   !: Bold
+#   ?: Inverted
 def draw(x,y,c,col=""):
     global gfx
     if gfx: return gfx.draw(x,y,c,col)
-
 
