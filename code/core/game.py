@@ -3,8 +3,9 @@
 # creating the world, parsing and writing to save files, and turning on/off
 # graphics.
 
-from graphics import gfx
+from graphics import gfx, draw
 
+from . import grid
 
 import sys
 import traceback
@@ -14,20 +15,13 @@ import traceback
 # data, and everything else.
 class Game(object):
     def __init__(self):
-        pass
+        self.g = grid.Grid(30,10) #aha. I'm creating a new map every time.
     
     
     def display_title(self):
-        title = [(1,"This is an engine"),
-                 (2,"One day it will be a game.")]
-        
-        for y,t in title:
-            x = 40-len(t)//2
-            q = y==1
-            
-            for c in t:
-                gfx.draw(x,y,c,'g'+("!" if q else ""))
-                x+= 1
+        draw.string(1,1,"This is an engine","g!")
+        draw.string(1,2,"One day it will be a game.","g")
+        self.g.draw(3,3,5,5,-2,-2)
     
     # Runs an interactive session of our game with the player until either
     # the player stops playing or an error occurs. Here, we pass input to the
