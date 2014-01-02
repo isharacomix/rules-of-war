@@ -8,8 +8,8 @@ import curses
 
 
 # The "screen" used by Curses. When "None", curses is off, and all curses
-# commands silently (safely) fail. This way, we can run games in non-interactive
-# mode.
+# commands silently (safely) fail. This way, we can run games in
+# non-interactive mode.
 _screen = None
 
 
@@ -56,9 +56,9 @@ def mode():
     return "curses"
 
 # Gets input from the user and translates it into python strings.
-# Returns None if the user hasn't pressed anything. Ideally this would
-# be intercepted by a keymapper object that doesn't rely on any literal
-# key definitions.
+# Returns None if the user hasn't pressed anything. Ideally this would be
+# intercepted by a keymapper object that doesn't rely on any literal key
+# definitions.
 _keymap ={curses.KEY_BACKSPACE: "backspace",
           curses.KEY_UP:        "up",
           curses.KEY_DOWN:      "down",

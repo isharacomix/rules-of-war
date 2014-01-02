@@ -1,7 +1,7 @@
-# The GFX module is a wrapper around both gfx_ascii and gfx_sdl (and conceivably
-# more experimental gfx libraries). It provides an interface to the underlying
-# grid-based drawing system where the game doesn't need to think about primitive
-# drawing functions.
+# The GFX module is a wrapper around both gfx_ascii and gfx_sdl (and
+# conceivably more experimental gfx libraries). It provides an interface to
+# the underlying grid-based drawing system where the game doesn't need to
+# think about primitive drawing functions.
 
 
 # Try to import ASCII
