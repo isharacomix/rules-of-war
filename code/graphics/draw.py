@@ -32,3 +32,20 @@ def fill(x,y,w,h,c=" ",col=""):
             gfx.draw(i,j,c,col)
             j += 1
         i += 1
+
+
+# This draws a border around the box defined by x,y,w,h.
+def border(x,y,w,h,border="     ",col=""):
+    i = x
+    top,bottom,left,right,corner = border
+    for i in range(x,x+w):
+        gfx.draw(i,y-1,top,col)
+        gfx.draw(i,y+h,bottom,col)
+    for j in range(y,y+h):
+        gfx.draw(x-1,j,left,col)
+        gfx.draw(x+w,j,right,col)
+    gfx.draw(x-1,y-1,corner,col)    
+    gfx.draw(x-1,y+h,corner,col)
+    gfx.draw(x+w,y+h,corner,col)
+    gfx.draw(x+w,y-1,corner,col)
+        

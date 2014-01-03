@@ -5,7 +5,7 @@
 
 from graphics import gfx, draw
 
-from . import grid
+from . import grid, widgets
 
 import sys
 import traceback
@@ -15,13 +15,20 @@ import traceback
 # data, and everything else.
 class Game(object):
     def __init__(self):
-        self.g = grid.Grid(30,10) #aha. I'm creating a new map every time.
+        g = grid.Grid(30,10)
+        self.g = grid.GridView(10,5,g)
+        self.menu = widgets.Menu(["One","Two","Three","Four"])
+        self.buff = widgets.Buffer(30,5)
     
     
     def display_title(self):
+        gfx.clear()
         draw.string(1,1,"This is an engine","g!")
         draw.string(1,2,"One day it will be a game.","g")
-        self.g.draw(3,3,5,5,-2,-2)
+        self.g.draw(3,3)
+        if self.menu:
+            self.menu.draw(6,6,"r")
+        self.buff.draw(1,10)
     
     # Runs an interactive session of our game with the player until either
     # the player stops playing or an error occurs. Here, we pass input to the
@@ -34,9 +41,18 @@ class Game(object):
         try:
             c = -1
             gfx.clear()
-            while c != "enter":
+            while c != "q":
                 self.display_title()
                 c = gfx.get_input()
+                if self.menu:
+                    q = self.menu.handle_input(c)
+                    if q:
+                        self.menu = None
+                        self.buff.write((q+" jjj a ok ")*30,"c")
+                else:
+                    self.g.handle_input(c)
+                    if c: self.buff.write(c)
+
                 gfx.refresh()
         except:
             gfx.stop()  
