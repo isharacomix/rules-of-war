@@ -169,6 +169,12 @@ class GridView(object):
     def handle_input(self, c):
         if self.menu:
             q = self.menu[0].handle_input(c)
+            if q == "Move":
+                
+                    if self.cursor in self.move_range:
+                        self.world.move_unit(self.selected,self.cursor)
+                    self.selected = None
+                    self.move_range = []
             if q:
                 self.menu = None
         else:
@@ -181,9 +187,11 @@ class GridView(object):
                 tile = self.world.get(cx,cy)
                 if self.selected:
                     if (cx,cy) in self.move_range:
-                        self.world.move_unit(self.selected,(cx,cy))
-                    self.selected = None
-                    self.move_range = []
+                        self.menu = widgets.Menu(["Move","Cancel"]),cx,cy
+                    else:
+                        self.selected = None
+                        self.move_range = []
+                    
                 elif tile.unit:
                     self.move_range = self.world.get_move_range(cx,cy)
                     self.selected = cx,cy
