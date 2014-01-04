@@ -142,15 +142,14 @@ def draw(x,y,c,col=""):
         h,w = _screen.getmaxyx()
         if x >= 0 and x < w and y >= 0 and y < h and (x,y)!=(w-1,h-1):
             mod = 0
-            if "!" in col: mod |= curses.A_BOLD
-            if "?" in col: mod |= curses.A_REVERSE
+            fg = "w"
+            bg = "x"
             if curses.has_colors():
-                fg = "w"
-                bg = "x"
-                for q in "xrgybmcw":
-                    if q in col: fg = q
-                for q in "XRGYBMCW":
-                    if q in col: bg = q
+                for e in col:
+                    if e in "xrgybmcw": fg = e
+                    if e in "XRGYBMCW": bg = e
+                    if e == "!": mod |= curses.A_BOLD
+                    if e == "?": mod ^= curses.A_REVERSE
                 mod |= _color(fg,bg)
             
             _screen.addch(y,x,c,mod)

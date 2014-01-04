@@ -16,19 +16,19 @@ import traceback
 class Game(object):
     def __init__(self):
         g = grid.Grid(30,10)
-        self.g = grid.GridView(10,5,g)
-        self.menu = widgets.Menu(["One","Two","Three","Four"])
-        self.buff = widgets.Buffer(30,5)
+        self.g = grid.GridView(70,18,g)
+        self.menu = None
+        self.buff = widgets.Buffer(10,5)
+        self.buff.write("Hello, world!")
     
     
     def display_title(self):
         gfx.clear()
-        draw.string(1,1,"This is an engine","g!")
-        draw.string(1,2,"One day it will be a game.","g")
-        self.g.draw(3,3)
+        self.g.draw(1,1)
         if self.menu:
-            self.menu.draw(6,6,"r")
-        self.buff.draw(1,10)
+            self.menu.draw(1,20,"r")
+        self.buff.draw(1,19)
+
     
     # Runs an interactive session of our game with the player until either
     # the player stops playing or an error occurs. Here, we pass input to the
@@ -48,10 +48,8 @@ class Game(object):
                     q = self.menu.handle_input(c)
                     if q:
                         self.menu = None
-                        self.buff.write((q+" jjj a ok ")*30,"c")
                 else:
                     self.g.handle_input(c)
-                    if c: self.buff.write(c)
 
                 gfx.refresh()
         except:

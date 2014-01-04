@@ -31,7 +31,7 @@ class Menu(object):
 
     # Draw the window on the terminal with the top left corner
     # at x,y. Will draw off the side of the screen.
-    def draw(self, x, y, col="w"):
+    def draw(self, x, y, col=""):
         w,h = 0,len(self.items)
         for s in self.items:
             w = max(w,len(s))
@@ -90,7 +90,7 @@ class Buffer(object):
     # This draws the buffer with its current width and height such
     # that it starts with the top-left x,y of the terminal. You can
     # override the colors (gray out) by providing a col parameter.
-    def draw(self, x, y, col=None):
+    def draw(self, x, y, col=""):
         draw.border(x,y,self.w,self.h,"--||+")
         draw.fill(x, y, self.w, self.h)
         w = self.where
@@ -98,6 +98,5 @@ class Buffer(object):
         while i > y and w < len(self.text):
             i -= 1
             s,c = self.text[w]
-            if col: c = col
-            draw.string(x,i,s,c)
+            draw.string(x,i,s,c+col)
             w += 1

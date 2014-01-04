@@ -139,14 +139,16 @@ def refresh():
         for x,y in _changes:
             c,col = _changes[(x,y)]
             target = pygame.Rect(x*_tw,y*_th,_tw,_th)
-            bold = "!" in col
+            bold = False
+            invert = False
             fg = "w"
             bg = "x"
-            for q in "xrgybmcw":
-                if q in col: fg = q
-            for q in "XRGYBMCW":
-                if q in col: bg = q
-            if "?" in col:
+            for e in col:
+                if e in "xrgybmcw": fg = e
+                if e in "XRGYBMCW": bg = q
+                if e == "!": bold = True
+                if e == "?": invert = not invert
+            if invert:
                 fg,bg=bg,fg
             _screen.blit(_tiles[(c,fg,bg,bold)],target)
             dirty.append(target)
