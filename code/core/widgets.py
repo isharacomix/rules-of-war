@@ -68,6 +68,7 @@ class Buffer(object):
                     current = ""
         if current:
             report.append((current,col))
+        report.reverse()
         self.text = report + self.text
         self.where = 0
 
