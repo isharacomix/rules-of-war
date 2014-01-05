@@ -15,7 +15,7 @@ import traceback
 # data, and everything else.
 class Game(object):
     def __init__(self):
-        g = grid.Grid(30,10)
+        g = grid.Grid(30,15)
         self.g = grid.GridView(70,18,g)
         self.menu = None
         self.buff = widgets.Buffer(10,5)

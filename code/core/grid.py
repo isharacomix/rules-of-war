@@ -17,9 +17,18 @@ class Grid(object):
                 row.append(Cell())
             self.grid.append(row)
 
+        # A game contains 2 to 6 teams.
+        self.units = []
         self.teams = [Team("One","r"),Team("Two","b")]
-        self.add_unit( Unit(), self.teams[1], 6, 6 )
+        self.add_unit( Unit(), self.teams[0], 6, 6 )
+        self.add_unit( Unit(), self.teams[0], 7, 9 )
+        self.add_unit( Unit(), self.teams[1], 12, 5 )
+        self.add_unit( Unit(), self.teams[1], 13, 11 )
 
+        # After every team has taken their turn, the
+        # next day begins.
+        self.day = 0
+        self.turn = 0
 
     # Get the tile at x,y. Returns None if out of range.
     def get(self, x, y):
@@ -27,6 +36,27 @@ class Grid(object):
             return None
         return self.grid[y][x]
     
+    # Get the unit at x,y.
+    def unit_at(self, x, y):
+        tile = self.get(x,y)
+        if tile: return tile.unit
+        else: return None
+
+    # Return the actions that the given unit can take if it were
+    # at x,y.
+    def actions(self, unit, x, y):
+        acts = []
+        a1 = self.unit_at(x-1,y)
+        a2 = self.unit_at(x+1,y)
+        a3 = self.unit_at(x,y-1)
+        a4 = self.unit_at(x,y+1)
+        attackable = False
+        if a1 and not a1.allied(unit): attackable = True
+        if a2 and not a2.allied(unit): attackable = True
+        if a3 and not a3.allied(unit): attackable = True
+        if a4 and not a4.allied(unit): attackable = True
+        if attackable: acts.append("Attack")
+        return acts+["Wait","Back"]
 
     # Get movement range of the unit at x,y. Returns nothing
     # if the tile is empty or does not exist. All of the positions
@@ -40,11 +70,12 @@ class Grid(object):
 
         # Use the naive flood-fill algorithm to get neighboring
         # tiles. TODO: handle allied units
-        report = set()
+        report = []
         def _floodfill((a,b),r):
             t = self.get(a,b)
-            if t and (not t.unit or t.unit.team == unit.team):
-                report.add((a,b))
+            if t and (not t.unit or t.unit.allied(unit)):
+                if (a,b) not in report:
+                    report.append((a,b))
                 if r > 0:
                     _floodfill((a-1,b),r-1)
                     _floodfill((a+1,b),r-1)
@@ -52,9 +83,11 @@ class Grid(object):
                     _floodfill((a,b+1),r-1)
         _floodfill((x,y),unit.move)
         
-        return [(x,y) for (x,y) in report if not self.get(x,y).unit]
+        return [(x,y) for (x,y) in report if (not self.unit_at(x,y) or
+                                              self.unit_at(x,y) is unit)]
 
-    # Moves a unit from the old tile to the new tile.
+    # Moves a unit from the old tile to the new tile. Will
+    # throw exception if move is illegal. CHECK FIRST.
     def move_unit(self, old, new):
         ox,oy = old
         x,y = new
@@ -64,15 +97,54 @@ class Grid(object):
         tile = self.get(x,y)
         tile.unit = unit
 
+    # Launch an attack from the attack coordinates to the defend
+    # coordinates. Will throw exception if move is illegal.
+    # CHECK FIRST.
+    def launch_attack(self, attacker, defender):
+        ax,ay = attacker
+        dx,dy = defender
+        atk_unit = self.get(ax,ay).unit
+        def_unit = self.get(dx,dy).unit
+        atk_unit.attack(def_unit)
+        if def_unit.hp >= 0: #and can counter
+            def_unit.attack(atk_unit)
+        
+        # Destroy dead units.
+        if def_unit.hp <= 0: self.remove_unit(dx,dy)
+        if atk_unit.hp <= 0: self.remove_unit(ax,ay)
+
+
     # Add a unit to the game. Throws an exception if the tile
     # does not exist or if the tile is occupied.
+    # This should be the ONLY WAY units are added to the game.
     def add_unit(self, unit, team, x, y):
         tile = self.get(x,y)
         if tile.unit:
             raise Exception("Tried to add unit to occupied tile %d,%d"%(x,y))
         tile.unit = unit
         unit.team = team
-        team.units.append(unit)
+        self.units.append(unit)
+
+    #
+    def remove_unit(self, x, y):
+        tile = self.get(x,y)
+        if tile.unit in self.units:
+            self.units.remove(tile.unit)
+        tile.unit = None
+
+    #
+    def current_team(self):
+        return self.teams[self.turn]
+
+    #
+    def end_turn(self):
+        current_team = self.teams[self.turn]
+        for u in self.units:
+            u.ready = True
+        self.turn += 1
+        if self.turn >= len(self.teams):
+            self.turn = 0
+            self.day += 1
         
 
 # A grid is made up of Cells. The cells all have properties
@@ -115,10 +187,6 @@ class Unit(object):
         self.ready = True
         self.move = 3
 
-    # Get the actions that this unit is currently capable of.
-    def get_actions(self):
-        return ["move","attack"]
-
     # This function draws the unit at the desired location.
     def draw(self, x, y, col):
         self.anim += .02
@@ -139,6 +207,15 @@ class Unit(object):
         # Draw the character.
         draw.char(x, y, img, color)
 
+    def allied(self, unit):
+        return unit.team == self.team or unit.team in self.team.allies
+
+    #
+    def attack(self, unit):
+        damage = int(30 * 0.01 * self.hp)
+        unit.hp -= damage
+        if unit.hp < 0:
+            unit.hp = 0
 
 # 
 class Team(object):
@@ -146,8 +223,10 @@ class Team(object):
         self.name = name
         self.color = color
         self.resources = 0
-        self.units = []
+        self.allies = []
 
+    def allied(self, team):
+        return team == self or team in self.allies
 
 # The view object of the grid.
 class GridView(object):
@@ -160,21 +239,34 @@ class GridView(object):
         self.cursor = 0,0
         self.c_anim = 0.0
 
-        self.move_range = []
+        self.highlight = []
         self.selected = None
 
+        self.hp_animation = []
+
+        self.alerts = []
+        self.currently = None
         self.menu = None
 
     # This function handles input passed from gfx.get_input.
     def handle_input(self, c):
         if self.menu:
             q = self.menu[0].handle_input(c)
-            if q == "Move":
-                
-                    if self.cursor in self.move_range:
-                        self.world.move_unit(self.selected,self.cursor)
-                    self.selected = None
-                    self.move_range = []
+            if q == "Attack":
+                if self.cursor in self.highlight:
+                    self.world.move_unit(self.selected,self.cursor)
+                self.currently = "attacking"
+                self.selected = self.cursor
+                self.highlight = []
+            if q == "Wait":
+                if self.cursor in self.highlight:
+                    self.world.move_unit(self.selected,self.cursor)
+                    self.world.unit_at(*self.cursor).ready = False
+                self.selected = None
+                self.currently = None
+                self.highlight = []
+            if q == "End Turn":
+                self.world.end_turn()
             if q:
                 self.menu = None
         else:
@@ -185,21 +277,49 @@ class GridView(object):
             if c == "right": self.cursor = cx+1,cy
             if c == "enter":
                 tile = self.world.get(cx,cy)
-                if self.selected:
-                    if (cx,cy) in self.move_range:
-                        self.menu = widgets.Menu(["Move","Cancel"]),cx,cy
+                unit = tile.unit if tile else None
+                if self.currently == "attacking":
+                    my_unit = self.world.unit_at(*self.selected)
+                    if unit and not unit.allied(my_unit):
+                        starting_hp = unit.hp, my_unit.hp
+                        c1 = unit.team.color
+                        c2 = my_unit.team.color
+                        self.world.launch_attack(self.selected,self.cursor)
+                        ending_hp = (unit.hp if unit else 0,
+                                     my_unit.hp if my_unit else 0)
+                        
+                        # Ugly hacky hp animation for combats.
+                        self.hp_animation = list(starting_hp)+list(ending_hp)
+                        x1,y1 = self.cursor
+                        x2,y2 = self.selected
+                        a1 = widgets.Alert( 6,1,"%d%%"%starting_hp[0], c1)
+                        a2 = widgets.Alert( 6,1,"%d%%"%starting_hp[1], c2)
+                        self.alerts += [(a1,x1+2,y1+2),(a2,x2-4,y2-2)]
+                        self.hp_animation += [a1,a2,50]
+                        
+                        if my_unit:
+                            my_unit.ready = False
+                        self.selected = None
+                        self.currently = None
+                elif self.currently == "moving":
+                    my_unit = self.world.unit_at(*self.selected)
+                    if (cx,cy) in self.highlight:
+                        acts = self.world.actions(my_unit,cx,cy)
+                        self.menu = widgets.Menu(acts),cx,cy
                     else:
                         self.selected = None
-                        self.move_range = []
-                    
-                elif tile.unit:
-                    self.move_range = self.world.get_move_range(cx,cy)
-                    self.selected = cx,cy
+                        self.currently = None
+                        self.highlight = []
+                elif unit:
+                    if unit.ready and unit.team == self.world.current_team():
+                        self.highlight = self.world.get_move_range(cx,cy)
+                        self.selected = cx,cy
+                        self.currently = "moving"
                     #actions = tile.unit.get_actions()
                     #if actions and len(actions) > 0:
                     #    self.menu = widgets.Menu(actions),cx,cy
-                #else:
-                #    self.menu = widgets.Menu(["End Turn","Back"]),cx,cy
+                else:
+                    self.menu = widgets.Menu(["Back","End Turn"]),cx,cy
         return None
 
     # Draw the grid to the terminal using the gfx library. Specify the
@@ -225,7 +345,7 @@ class GridView(object):
                 # are highlighted by the interface.
                 cur = ""
                 if self.cursor == (_x,_y): cur += "?"
-                if (_x,_y) in self.move_range: cur += "?"
+                if (_x,_y) in self.highlight: cur += "?"
 
                 if ( tile and (tx-x >= 0) and (ty-y >= 0) and
                      (not w or tx < x+w) and (not h or ty < y+h)):
@@ -234,3 +354,24 @@ class GridView(object):
         if self.menu:
             m,mx,my = self.menu
             m.draw(mx+x-cx+2, my+y-cy)
+
+        if self.hp_animation:
+            hp1s,hp2s,hp1e,hp2e,a1,a2,t= self.hp_animation
+            if hp1s > hp1e:
+                hp1s -= 1
+                a1.write( "%d%%"%hp1s)
+                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
+            elif hp2s > hp2e:
+                hp2s -=1
+                a2.write( "%d%%"%hp2s)
+                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
+            elif t > 0:
+                t -= 1
+                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
+            else:
+                hp_animation = None
+                self.alerts = []
+
+        for a in self.alerts:
+            m,mx,my = a
+            m.draw(mx+x-cx, my+y-cy)

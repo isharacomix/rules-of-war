@@ -42,6 +42,46 @@ class Menu(object):
             draw.string(x,y+i,s,col+("?" if i==self.index else ""))
 
 
+# An alert is just a window that contains text. Unlike a buffer, it doesn'
+# scroll. Writing to it will overwrite the current message.
+class Alert(object):
+    def __init__(self, w, h, msg="", col=""):
+        self.w = w
+        self.h = h
+        self.text = []
+        self.col = col
+        self.write(msg)
+
+    def write(self, s):
+        current = ""
+        report = []
+        for c in s:
+            current += c
+            if len(current) >= self.w:
+                if " " in current.rstrip():
+                    old,current = current.rstrip().rsplit(None,1)
+                    report.append(old)
+                else:
+                    report.append(current)
+                    current = ""
+        if current:
+            report.append(current)
+        report.reverse()
+        self.text = report
+
+    def handle_input(self, c):
+        return None
+
+    def draw(self, x, y, col=""):
+        draw.border(x,y,self.w,self.h,"--||+")
+        draw.fill(x, y, self.w, self.h)
+        w = 0
+        i = y+self.h
+        while i > y and w < len(self.text):
+            i -= 1
+            draw.string(x,i,self.text[w],self.col+col)
+            w += 1
+
 # A buffer is just a window that contains text. You can add more text to it
 # and it will automatically scroll to the newest. Each line in the buffer is
 # a (text,color) tuple.
