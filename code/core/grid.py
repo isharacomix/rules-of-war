@@ -5,30 +5,73 @@ from graphics import draw
 
 from . import widgets
 
+import copy
 
-# need a comment here
+
+# The Grid is a game-agnostic representation of the world's entities. It
+# provides an API to game rulesets to create, delete, and move entities
+# around, but essentially has no functionality other than changing its
+# configuration. The grid should be initialized with a configuration
+# Dictionary containing the following keys and values.
+#   w: (int) width
+#   h: (int) height
+#   cells: (list) exactly w*h cells
+#   teams: (list) the teams in the map
+#   allies: (list) the teams that are allied in a list of lists of ints
+#   variables: (dictionary) a dictionary of user-defined variables
 class Grid(object):
-    def __init__(self, w, h):
+    def __init__(self, config):
         self.grid = []
-        self.w, self.h = w,h
-        for y in range(h):
+        self.w, self.h = config["w"], config["h"]
+        for y in range(self.h):
             row = []
-            for x in range(w):
-                row.append(Cell())
+            for x in range(self.w):
+                row.append(None)
             self.grid.append(row)
-
-        # A game contains 2 to 6 teams.
+        self.teams = []
         self.units = []
-        self.teams = [Team("One","r"),Team("Two","b")]
-        self.add_unit( Unit(), self.teams[0], 6, 6 )
-        self.add_unit( Unit(), self.teams[0], 7, 9 )
-        self.add_unit( Unit(), self.teams[1], 12, 5 )
-        self.add_unit( Unit(), self.teams[1], 13, 11 )
-
-        # After every team has taken their turn, the
-        # next day begins.
+        self.variables = config.get("variables",{})
         self.day = 0
         self.turn = 0
+
+        # Load the teams first, since cells and units reference them.
+        # Then set up the alliances.
+        for t in config["teams"]:
+            this = Team( t["name"], t["color"] )
+            this.variables = t.get("variables",{})
+            self.teams.append(this)
+        for alist in config.get("allies",[]):
+            for a in alist:
+                for b in alist:
+                    self.teams[a].allies.append( self.teams[b] )
+
+        # Load the terrain cells. The units are embedded in these elements
+        # of the dictionary. Note that when units are loaded in other units
+        # we, have to recursively dig them out.
+        #   x: (int) x position
+        #   y: (int) y position
+        #   terrain: (string) the name of the terrain
+        #   unit: the unit on this terrain, if one
+        #   team: (int) the team that owns the terrain, if any
+        #   variables: (dict) User-defined variables
+        for c in config["cells"]:
+            this = Cell(c["terrain"])
+            self.grid[c["y"]][c["x"]] = this
+            this.variables = c.get("variables",{})
+            if "owner" in c:
+                this.team = self.teams[c["team"]]
+            if "unit" in c:
+                def _process_units(unit):
+                    u = Unit(unit["type"],self.teams[unit["team"]])
+                    u.variables = unit.get("variables",{})
+                    self.units.append(u)
+                    for u in unit.get("carrying",[]):
+                        _process_units(u)
+                    return u
+                this.unit = _process_units(c["unit"])
+
+
+                
 
     # Get the tile at x,y. Returns None if out of range.
     def get(self, x, y):
@@ -147,14 +190,16 @@ class Grid(object):
             self.day += 1
         
 
-# A grid is made up of Cells. The cells all have properties
-# that make up what would be called their 'terrain'.
+# A grid is made up of Cells. The cells all have properties that make up
+# what would be called their 'terrain'.
 class Cell(object):
-    def __init__(self):
+    def __init__(self, terrain):
+        self.name = terrain
         self.c = "."
         self.col = "g"
         self.unit = None
         self.team = None
+        self.variables = {}
 
     # This function returns the character and color that
     # should be drawn. If there is a unit on this terrain,
@@ -176,11 +221,15 @@ class Cell(object):
         draw.char(x, y, self.c, self.col+col)
 
 
-# Units 
+# Units are the pieces that move about the game board. Units belong to a
+# team and can be moved about by taking actions.
 class Unit(object):
-    def __init__(self):
+    def __init__(self, name, team):
+        self.name = name
         self.c = "@"
-        self.team = None
+        self.team = team
+        self.variables = {}
+
         self.anim = 0.0
         
         self.hp = 100
@@ -217,13 +266,15 @@ class Unit(object):
         if unit.hp < 0:
             unit.hp = 0
 
-# 
+#
 class Team(object):
     def __init__(self, name, color):
         self.name = name
         self.color = color
         self.resources = 0
         self.allies = []
+        self.active = True
+        self.variables = {}
 
     def allied(self, team):
         return team == self or team in self.allies
@@ -247,6 +298,7 @@ class GridView(object):
         self.alerts = []
         self.currently = None
         self.menu = None
+        self.checkpoint = None
 
     # This function handles input passed from gfx.get_input.
     def handle_input(self, c):
@@ -275,6 +327,8 @@ class GridView(object):
             if c == "down": self.cursor = cx,cy+1
             if c == "left": self.cursor = cx-1,cy
             if c == "right": self.cursor = cx+1,cy
+            if c == "w": self.checkpoint = copy.deepcopy(self.world)
+            if c == "e": self.world = self.checkpoint
             if c == "enter":
                 tile = self.world.get(cx,cy)
                 unit = tile.unit if tile else None

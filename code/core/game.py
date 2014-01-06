@@ -15,7 +15,30 @@ import traceback
 # data, and everything else.
 class Game(object):
     def __init__(self):
-        g = grid.Grid(30,15)
+        gdict = {}
+        gdict["w"] = 30
+        gdict["h"] = 15
+        gdict["cells"] = []
+        for x in range(30):
+            for y in range(15):
+                cell = {}
+                cell["x"] = x
+                cell["y"] = y
+                cell["terrain"] = "road"
+                gdict["cells"].append(cell)
+        unit1 = {}
+        unit1["type"] = "Infantry"
+        unit1["team"] = 0
+        unit2 = {}
+        unit2["type"] = "Infantry"
+        unit2["team"] = 1
+        gdict["cells"][4]["unit"] = unit1
+        gdict["cells"][40]["unit"] = unit2
+        team1 = {"name":"Red","color":"r"}
+        team2 = {"name":"Blue","color":"b"}
+        gdict["teams"] = [team1,team2]
+        g = grid.Grid(gdict)
+
         self.g = grid.GridView(70,18,g)
         self.menu = None
         self.buff = widgets.Buffer(10,5)
