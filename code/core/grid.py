@@ -295,8 +295,6 @@ class GridView(object):
         self.highlight = []
         self.selected = None
 
-        self.hp_animation = []
-
         self.alerts = []
         self.currently = None
         self.menu = None
@@ -332,25 +330,23 @@ class GridView(object):
                 if self.currently == "attacking":
                     my_unit = self.world.unit_at(*self.selected)
                     if unit and not unit.allied(my_unit):
-                        starting_hp = unit.hp, my_unit.hp
+                        start_hp = unit.hp, my_unit.hp
                         c1 = unit.team.color
                         c2 = my_unit.team.color
                         self.world.launch_attack(self.selected,self.cam.cursor)
-                        ending_hp = (unit.hp if unit else 0,
-                                     my_unit.hp if my_unit else 0)
+                        end_hp = (unit.hp if unit else 0,
+                                  my_unit.hp if my_unit else 0)
                         
-                        # Ugly hacky hp animation for combats.
-                        self.hp_animation = list(starting_hp)+list(ending_hp)
-                        t1 = starting_hp[0]-ending_hp[0]
-                        t2 = starting_hp[1]-ending_hp[1]
-                        a1 = HPAlert(6,1,c1,starting_hp[0],ending_hp[0],0)
-                        a2 = HPAlert(6,1,c2,starting_hp[1],ending_hp[1],t1)
+                        # Animate combat stuff
+                        t1 = start_hp[0]-end_hp[0]
+                        t2 = start_hp[1]-end_hp[1]
+                        a1 = widgets.HPAlert(6,1,c1,start_hp[0],end_hp[0],0)
+                        a2 = widgets.HPAlert(6,1,c2,start_hp[1],end_hp[1],t1)
                         x1,y1 = pos
                         x2,y2 = self.selected
                         a1.time = t1+t2+50
                         a2.time = t1+t2+50
                         self.alerts += [(a1,x1+2,y1+2),(a2,x2-4,y2-2)]
-                        self.hp_animation += [a1,a2]
                         
                         if my_unit:
                             my_unit.ready = False

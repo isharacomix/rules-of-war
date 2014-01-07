@@ -101,7 +101,7 @@ class HPAlert(Alert):
             self.delay -= 1
         elif self.start > self.end:
             self.start -= 1
-            self.alert.write("%d%%"%self.start)
+            self.write("%d%%"%self.start)
         super(HPAlert, self).draw(x,y,col)
 
 
@@ -189,8 +189,14 @@ class Camera(object):
         if c == "left": self.cursor = x-1, y
         if c == "right": self.cursor = x+1, y
 
-        # move the camera now
+        # Move the camera to keep the cursor visible.
+        cx, cy = self.viewport
+        if x < cx: self.viewport = cx-self.w/2,cy
+        if y < cy: self.viewport = cx,cy-self.h/2
+        if x >= cx+self.w: self.viewport = cx+self.w/2,cy
+        if y >= cy+self.h: self.viewport = cx,cy+self.h/2
 
+        # If we press enter, send that information to the caller.
         if c == "enter":
             self.blink_anim = 0.0
             return self.cursor
