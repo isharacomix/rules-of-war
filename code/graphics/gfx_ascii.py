@@ -149,7 +149,7 @@ def draw(x,y,c,col=""):
                     if e in "xrgybmcw": fg = e
                     if e in "XRGYBMCW": bg = e
                     if e == "!": mod |= curses.A_BOLD
-                    if e == "?": mod ^= curses.A_REVERSE
+                    if e == "?": mod |= curses.A_REVERSE
                 mod |= _color(fg,bg)
             
             _screen.addch(y,x,c,mod)

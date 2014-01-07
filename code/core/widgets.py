@@ -42,7 +42,7 @@ class Menu(object):
             draw.string(x,y+i,s,col+("?" if i==self.index else ""))
 
 
-# An alert is just a window that contains text. Unlike a buffer, it doesn'
+# An alert is just a window that contains text. Unlike a buffer, it doesn't
 # scroll. Writing to it will overwrite the current message.
 class Alert(object):
     def __init__(self, w, h, msg="", col=""):
@@ -81,6 +81,29 @@ class Alert(object):
             i -= 1
             draw.string(x,i,self.text[w],self.col+col)
             w += 1
+
+
+# The HPAlert is a special kind of alert that is used when a unit's HP
+# is going down. The Alert starts at a certain HP and decreases until
+# it reaches end. In order to facilitate animation, you can also put in
+# a delay so that another unit's animation can finish before this one
+# starts.
+class HPAlert(Alert):
+    def __init__(self, w, h, col="w", start=100, end=0, delay=0):
+        super(HPAlert, self).__init__(w,h, "%d%%"%start,  col)
+        #self.alert = widgets.Alert( 6,1,"%d%%"%start, col)
+        self.start = start
+        self.end = end
+        self.delay = delay
+
+    def draw(self, x, y, col=""):
+        if self.delay > 0:
+            self.delay -= 1
+        elif self.start > self.end:
+            self.start -= 1
+            self.alert.write("%d%%"%self.start)
+        super(HPAlert, self).draw(x,y,col)
+
 
 # A buffer is just a window that contains text. You can add more text to it
 # and it will automatically scroll to the newest. Each line in the buffer is
@@ -141,3 +164,63 @@ class Buffer(object):
             s,c = self.text[w]
             draw.string(x,i,s,c+col)
             w += 1
+
+
+# A Camera is an interactable widget that serves as a representation of
+# a Grid.
+class Camera(object):
+    def __init__(self, w, h, grid):
+        self.w = w
+        self.h = h
+        self.grid = grid
+
+        self.cursor = 0,0
+        self.viewport = 0,0
+        self.blink = []
+        self.blink_anim = 0.0
+        self.blink_anim_speed = 0.1
+
+    # Returns the cursor when the player presses Enter. Moves the
+    # cursor around when the arrow keys are pressed.
+    def handle_input(self, c):
+        x, y = self.cursor
+        if c == "up": self.cursor = x, y-1
+        if c == "down": self.cursor = x, y+1
+        if c == "left": self.cursor = x-1, y
+        if c == "right": self.cursor = x+1, y
+
+        # move the camera now
+
+        if c == "enter":
+            self.blink_anim = 0.0
+            return self.cursor
+        return None
+
+    # Draw the camera.
+    def draw(self, x, y, col=""):
+        w,h = self.w,self.h
+        cx,cy = self.viewport
+
+        # The blink animation.
+        self.blink_anim += self.blink_anim_speed
+        if self.blink_anim >= 2:
+            self.blink_anim = 0.0
+        
+        draw.border(x,y,w,h,"--||+")
+        draw.fill(x,y,w,h)
+        
+        # Draw all of the tiles.
+        for _x in range(cx,cx+w):
+            for _y in range(cy,cy+h):
+                tx,ty = _x+x-cx, _y+y-cy
+                tile = self.grid.get(_x,_y)
+
+                # Apply multiple levels of inverted color when tiles
+                # are highlighted by the interface.
+                cur = col
+                if self.blink_anim < 1.0 and (_x,_y) in self.blink: cur += "?"
+                if self.cursor == (_x,_y): cur += "w?"
+                
+                if ( tile and (tx-x >= 0) and (ty-y >= 0) and
+                     (not w or tx < x+w) and (not h or ty < y+h)):
+                    tile.draw(tx,ty,cur)

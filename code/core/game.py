@@ -46,7 +46,7 @@ class Game(object):
     
     
     def display_title(self):
-        gfx.clear()
+        #gfx.clear()
         self.g.draw(1,1)
         if self.menu:
             self.menu.draw(1,20,"r")

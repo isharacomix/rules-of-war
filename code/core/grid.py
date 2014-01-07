@@ -279,16 +279,18 @@ class Team(object):
     def allied(self, team):
         return team == self or team in self.allies
 
+
+
+
+
+
 # The view object of the grid.
 class GridView(object):
     def __init__(self, w, h, grid):
         self.world = grid
         self.w = w
         self.h = h
-        self.cx = 0
-        self.cy = 0
-        self.cursor = 0,0
-        self.c_anim = 0.0
+        self.cam = widgets.Camera(w,h,grid)
 
         self.highlight = []
         self.selected = None
@@ -305,31 +307,26 @@ class GridView(object):
         if self.menu:
             q = self.menu[0].handle_input(c)
             if q == "Attack":
-                if self.cursor in self.highlight:
-                    self.world.move_unit(self.selected,self.cursor)
+                if self.cam.cursor in self.cam.blink:
+                    self.world.move_unit(self.selected,self.cam.cursor)
                 self.currently = "attacking"
-                self.selected = self.cursor
-                self.highlight = []
+                self.selected = self.cam.cursor
+                self.cam.blink = []
             if q == "Wait":
-                if self.cursor in self.highlight:
-                    self.world.move_unit(self.selected,self.cursor)
-                    self.world.unit_at(*self.cursor).ready = False
+                if self.cam.cursor in self.cam.blink:
+                    self.world.move_unit(self.selected,self.cam.cursor)
+                    self.world.unit_at(*self.cam.cursor).ready = False
                 self.selected = None
                 self.currently = None
-                self.highlight = []
+                self.cam.blink = []
             if q == "End Turn":
                 self.world.end_turn()
             if q:
                 self.menu = None
         else:
-            cx,cy = self.cursor
-            if c == "up": self.cursor = cx,cy-1
-            if c == "down": self.cursor = cx,cy+1
-            if c == "left": self.cursor = cx-1,cy
-            if c == "right": self.cursor = cx+1,cy
-            if c == "w": self.checkpoint = copy.deepcopy(self.world)
-            if c == "e": self.world = self.checkpoint
-            if c == "enter":
+            pos = self.cam.handle_input(c)
+            if pos:
+                cx,cy = pos
                 tile = self.world.get(cx,cy)
                 unit = tile.unit if tile else None
                 if self.currently == "attacking":
@@ -338,18 +335,22 @@ class GridView(object):
                         starting_hp = unit.hp, my_unit.hp
                         c1 = unit.team.color
                         c2 = my_unit.team.color
-                        self.world.launch_attack(self.selected,self.cursor)
+                        self.world.launch_attack(self.selected,self.cam.cursor)
                         ending_hp = (unit.hp if unit else 0,
                                      my_unit.hp if my_unit else 0)
                         
                         # Ugly hacky hp animation for combats.
                         self.hp_animation = list(starting_hp)+list(ending_hp)
-                        x1,y1 = self.cursor
+                        t1 = starting_hp[0]-ending_hp[0]
+                        t2 = starting_hp[1]-ending_hp[1]
+                        a1 = HPAlert(6,1,c1,starting_hp[0],ending_hp[0],0)
+                        a2 = HPAlert(6,1,c2,starting_hp[1],ending_hp[1],t1)
+                        x1,y1 = pos
                         x2,y2 = self.selected
-                        a1 = widgets.Alert( 6,1,"%d%%"%starting_hp[0], c1)
-                        a2 = widgets.Alert( 6,1,"%d%%"%starting_hp[1], c2)
+                        a1.time = t1+t2+50
+                        a2.time = t1+t2+50
                         self.alerts += [(a1,x1+2,y1+2),(a2,x2-4,y2-2)]
-                        self.hp_animation += [a1,a2,50]
+                        self.hp_animation += [a1,a2]
                         
                         if my_unit:
                             my_unit.ready = False
@@ -357,16 +358,16 @@ class GridView(object):
                         self.currently = None
                 elif self.currently == "moving":
                     my_unit = self.world.unit_at(*self.selected)
-                    if (cx,cy) in self.highlight:
+                    if (cx,cy) in self.cam.blink:
                         acts = self.world.actions(my_unit,cx,cy)
                         self.menu = widgets.Menu(acts),cx,cy
                     else:
                         self.selected = None
                         self.currently = None
-                        self.highlight = []
+                        self.cam.blink = []
                 elif unit:
                     if unit.ready and unit.team == self.world.current_team():
-                        self.highlight = self.world.get_move_range(cx,cy)
+                        self.cam.blink = self.world.get_move_range(cx,cy)
                         self.selected = cx,cy
                         self.currently = "moving"
                     #actions = tile.unit.get_actions()
@@ -374,58 +375,26 @@ class GridView(object):
                     #    self.menu = widgets.Menu(actions),cx,cy
                 else:
                     self.menu = widgets.Menu(["Back","End Turn"]),cx,cy
+            else:
+                if c == "w": self.checkpoint = copy.deepcopy(self.world)
+                if c == "e": self.world = self.checkpoint
         return None
 
     # Draw the grid to the terminal using the gfx library. Specify the
     # x,y and w,h of the viewport in the terminal, and the cx,cy of the
     # top-left of the map (including outside of the map).
     def draw(self, x, y, col=None):
-        w,h = self.w,self.h
-        cx,cy = self.cx,self.cy
-
-        self.c_anim += .05
-        if self.c_anim >= 2:
-            self.c_anim = 0.0
-        
-        draw.border(x,y,w,h,"--||+")
-        draw.fill(x,y,w,h)
-        
-        for _x in range(cx,cx+w):
-            for _y in range(cy,cy+h):
-                tx,ty = _x+x-cx, _y+y-cy
-                tile = self.world.get(_x,_y)
-
-                # Apply multiple levels of inverted color when tiles
-                # are highlighted by the interface.
-                cur = ""
-                if self.cursor == (_x,_y): cur += "?"
-                if (_x,_y) in self.highlight: cur += "?"
-
-                if ( tile and (tx-x >= 0) and (ty-y >= 0) and
-                     (not w or tx < x+w) and (not h or ty < y+h)):
-                    tile.draw(tx,ty,cur)
+        self.cam.draw(x,y)
+        cx,cy = self.cam.viewport
 
         if self.menu:
             m,mx,my = self.menu
             m.draw(mx+x-cx+2, my+y-cy)
 
-        if self.hp_animation:
-            hp1s,hp2s,hp1e,hp2e,a1,a2,t= self.hp_animation
-            if hp1s > hp1e:
-                hp1s -= 1
-                a1.write( "%d%%"%hp1s)
-                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
-            elif hp2s > hp2e:
-                hp2s -=1
-                a2.write( "%d%%"%hp2s)
-                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
-            elif t > 0:
-                t -= 1
-                self.hp_animation = [hp1s,hp2s,hp1e,hp2e,a1,a2,t]
-            else:
-                hp_animation = None
-                self.alerts = []
-
+        # Display all alerts on the screen until their timers
+        # expire.
         for a in self.alerts:
             m,mx,my = a
+            m.time -= 1
             m.draw(mx+x-cx, my+y-cy)
+        self.alerts = [a for a in self.alerts if a[0].time > 0]

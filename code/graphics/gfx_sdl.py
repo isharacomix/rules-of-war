@@ -14,6 +14,7 @@ if pygame.font is None:
 _screen = None
 _changes = {}
 _sw, _sh, _tw, _th = 0,0,0,0
+_clock = None
 
 
 # The Start function creates a 24x80 tile surface attached to the window and
@@ -29,7 +30,7 @@ _colors = { "x": (0,0,0),
             "w": (200,200,200),
     }
 def start( screen_w=80, screen_h=24, tile_w=15, tile_h=30):
-    global _screen, _tiles, _colors, _fakescreen, _dirty
+    global _screen, _tiles, _colors, _fakescreen, _dirty, _clock
     global _sw, _sh, _tw, _th
     if not _screen:
         pygame.init()
@@ -38,6 +39,7 @@ def start( screen_w=80, screen_h=24, tile_w=15, tile_h=30):
         _screen = pygame.display.set_mode((_sw*_tw, _sh*_th))
         _screen.fill((0,0,0))
         _changes = {}
+        _clock = pygame.time.Clock()
         
         if _tiles is None:
             f = pygame.font.Font(None,_th-2)
@@ -128,9 +130,9 @@ def get_input():
 # This redraws the screen and handles the framerate. Should be called once
 # per game tick.
 def refresh():
-    global _screen, _changes, _tw, _th
+    global _screen, _changes, _clock, _tw, _th
     if _screen:
-        pygame.time.wait(20)
+        _clock.tick(50)
         dirty = []
         
         cleared = False
@@ -147,7 +149,7 @@ def refresh():
                 if e in "xrgybmcw": fg = e
                 if e in "XRGYBMCW": bg = q
                 if e == "!": bold = True
-                if e == "?": invert = not invert
+                if e == "?": invert = True
             if invert:
                 fg,bg=bg,fg
             _screen.blit(_tiles[(c,fg,bg,bold)],target)
