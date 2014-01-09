@@ -39,7 +39,7 @@ class Game(object):
         gdict["teams"] = [team1,team2]
         g = grid.Grid(gdict)
 
-        self.g = grid.GridView(70,18,g)
+        self.g = grid.Controller(70,18,g)
         self.menu = None
         self.buff = widgets.Buffer(10,5)
         self.buff.write("Hello, world!")

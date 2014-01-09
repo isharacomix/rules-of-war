@@ -3,7 +3,7 @@
 
 from graphics import draw
 
-from . import widgets
+from . import widgets, rules
 
 import copy
 
@@ -89,16 +89,6 @@ class Grid(object):
     # at x,y.
     def actions(self, unit, x, y):
         acts = []
-        a1 = self.unit_at(x-1,y)
-        a2 = self.unit_at(x+1,y)
-        a3 = self.unit_at(x,y-1)
-        a4 = self.unit_at(x,y+1)
-        attackable = False
-        if a1 and not a1.allied(unit): attackable = True
-        if a2 and not a2.allied(unit): attackable = True
-        if a3 and not a3.allied(unit): attackable = True
-        if a4 and not a4.allied(unit): attackable = True
-        if attackable: acts.append("Attack")
         return acts+["Wait","Back"]
 
     # Get movement range of the unit at x,y. Returns nothing
@@ -284,96 +274,49 @@ class Team(object):
 
 
 
-# The view object of the grid.
-class GridView(object):
+# The controller of the grid. It takes a rules object and passes
+# control back and forth between it. It doesn't usually need a
+# direct copy of the grid, except for its camera.
+class Controller(object):
     def __init__(self, w, h, grid):
-        self.world = grid
+        self.world = rules.Rules(grid)
         self.w = w
         self.h = h
         self.cam = widgets.Camera(w,h,grid)
 
-        self.highlight = []
-        self.selected = None
-
         self.alerts = []
-        self.currently = None
         self.menu = None
-        self.checkpoint = None
 
     # This function handles input passed from gfx.get_input.
     def handle_input(self, c):
+        cx,cy = self.cam.cursor
+        r = None
+
+        # If we have a menu, it capture the input. Otherwise, the camera
+        # does.
         if self.menu:
             q = self.menu[0].handle_input(c)
-            if q == "Attack":
-                if self.cam.cursor in self.cam.blink:
-                    self.world.move_unit(self.selected,self.cam.cursor)
-                self.currently = "attacking"
-                self.selected = self.cam.cursor
-                self.cam.blink = []
-            if q == "Wait":
-                if self.cam.cursor in self.cam.blink:
-                    self.world.move_unit(self.selected,self.cam.cursor)
-                    self.world.unit_at(*self.cam.cursor).ready = False
-                self.selected = None
-                self.currently = None
-                self.cam.blink = []
-            if q == "End Turn":
-                self.world.end_turn()
             if q:
+                r = self.world.process(q)
                 self.menu = None
         else:
             pos = self.cam.handle_input(c)
             if pos:
-                cx,cy = pos
-                tile = self.world.get(cx,cy)
-                unit = tile.unit if tile else None
-                if self.currently == "attacking":
-                    my_unit = self.world.unit_at(*self.selected)
-                    if unit and not unit.allied(my_unit):
-                        start_hp = unit.hp, my_unit.hp
-                        c1 = unit.team.color
-                        c2 = my_unit.team.color
-                        self.world.launch_attack(self.selected,self.cam.cursor)
-                        end_hp = (unit.hp if unit else 0,
-                                  my_unit.hp if my_unit else 0)
-                        
-                        # Animate combat stuff
-                        t1 = start_hp[0]-end_hp[0]
-                        t2 = start_hp[1]-end_hp[1]
-                        a1 = widgets.HPAlert(6,1,c1,start_hp[0],end_hp[0],0)
-                        a2 = widgets.HPAlert(6,1,c2,start_hp[1],end_hp[1],t1)
-                        x1,y1 = pos
-                        x2,y2 = self.selected
-                        a1.time = t1+t2+50
-                        a2.time = t1+t2+50
-                        self.alerts += [(a1,x1+2,y1+2),(a2,x2-4,y2-2)]
-                        
-                        if my_unit:
-                            my_unit.ready = False
-                        self.selected = None
-                        self.currently = None
-                elif self.currently == "moving":
-                    my_unit = self.world.unit_at(*self.selected)
-                    if (cx,cy) in self.cam.blink:
-                        acts = self.world.actions(my_unit,cx,cy)
-                        self.menu = widgets.Menu(acts),cx,cy
-                    else:
-                        self.selected = None
-                        self.currently = None
-                        self.cam.blink = []
-                elif unit:
-                    if unit.ready and unit.team == self.world.current_team():
-                        self.cam.blink = self.world.get_move_range(cx,cy)
-                        self.selected = cx,cy
-                        self.currently = "moving"
-                    #actions = tile.unit.get_actions()
-                    #if actions and len(actions) > 0:
-                    #    self.menu = widgets.Menu(actions),cx,cy
-                else:
-                    self.menu = widgets.Menu(["Back","End Turn"]),cx,cy
-            else:
-                if c == "w": self.checkpoint = copy.deepcopy(self.world)
-                if c == "e": self.world = self.checkpoint
+                r = self.world.process(pos)
+
+        # If the rules were processed, figure out if we need to display
+        # a menu or highlight tiles.
+        if r:
+            self.cam.blink = []
+            if r == rules.CTRL_COORD:
+                self.cam.blink = self.world.choices
+            if r == rules.CTRL_MENU:
+                self.menu = widgets.Menu(self.world.choices),cx,cy
+            if r == rules.CTRL_UNDO:
+                self.cam.grid = self.world.grid
+
+        # This returns nothing.
+        self.alerts += self.world.pop_alerts()
         return None
 
     # Draw the grid to the terminal using the gfx library. Specify the
