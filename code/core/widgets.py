@@ -219,7 +219,7 @@ class Camera(object):
         for _x in range(cx,cx+w):
             for _y in range(cy,cy+h):
                 tx,ty = _x+x-cx, _y+y-cy
-                tile = self.grid.get(_x,_y)
+                tile = self.grid.tile_at(_x,_y)
 
                 # Apply multiple levels of inverted color when tiles
                 # are highlighted by the interface.

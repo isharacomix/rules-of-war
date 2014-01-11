@@ -24,14 +24,14 @@ class Game(object):
                 cell = {}
                 cell["x"] = x
                 cell["y"] = y
-                cell["terrain"] = "road"
+                cell["name"] = "grass"
                 gdict["cells"].append(cell)
         unit1 = {}
-        unit1["type"] = "i"
+        unit1["icon"] = "i"
         unit1["name"] = "Infantry"
         unit1["team"] = 0
         unit2 = {}
-        unit2["type"] = "L"
+        unit2["icon"] = "L"
         unit2["name"] = "Artillery"
         unit2["team"] = 1
         gdict["cells"][4]["unit"] = unit1

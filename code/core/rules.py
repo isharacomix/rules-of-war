@@ -3,6 +3,7 @@
 # by a Controller that provides piecewise input.
 
 from . import grid, widgets
+from graphics import draw
 
 import copy
 
@@ -13,12 +14,42 @@ CTRL_MENU = "menu"
 CTRL_UNDO = "undo"
 
 
-# 
+class Cell(grid.Cell):
+    def foo(self):
+        pass
+
+class Team(grid.Team):
+    def foo(self):
+        pass
+
+class Unit(grid.Unit):
+    def draw(self, x, y, col):
+        self.anim += .02
+
+        # Gray out units that can't act. Units are always bold.
+        ready = "x" if not self.ready else ""
+        color = self.team.color + ready + col + "!"
+
+        # Build the animation for this unit based on values
+        # that are running low (hp, fuel, etc).
+        frames = [self.icon]
+        if (self.hp < 90):
+            frames.append( str((self.hp//10)+1)  )
+        if int(self.anim) >= len(frames):
+            self.anim = 0.0
+        img = frames[int(self.anim)]
+        
+        # Draw the character.
+        draw.char(x, y, img, color)
+
 
 
 #
 class Rules(object):
     def __init__(self, config):
+        # TODO: load the rules definition (types of units and properties)
+
+        # Create the grid with what's left.
         self.grid = grid.Grid(config, self)
         self.checkpoint = copy.deepcopy(self.grid)
 
@@ -49,20 +80,25 @@ class Rules(object):
         self.properties["H"] = []
         self.properties["L"] = ["indirect"]
 
+    # This function produces a Unit object based on the unit code.
+    def make_unit(self, data):
+        u = Unit(data["name"], data["icon"])
+        u.hp = 100
+        u.ready = True
+        u.move = 3
+        u.anim = 0.0
+        return u
 
-    class Cell(grid.Cell):
-        def foo(self):
-            pass
+    # This function produces a Cell object based on the terrain code.
+    def make_cell(self, data):
+        c = Cell(data["name"],'.','g')
+        return c
 
-    #
-    class Unit(grid.Unit):
-        def foo(self):
-            pass
+    # This function produces a team.
+    def make_team(self, data):
+        t = Team(data["name"],data["color"])
+        return t
 
-    #
-    class Team(grid.Team):
-        def foo(self):
-            pass
 
     # Get movement range of the unit at x,y. Returns nothing
     # if the tile is empty or does not exist. All of the positions
@@ -104,8 +140,8 @@ class Rules(object):
         if not def_unit: raise Exception("Defend square is empty.")
 
         # This is the basic attack formula.
-        a = atk_unit.c
-        d = def_unit.c
+        a = atk_unit.icon
+        d = def_unit.icon
         def_unit.hp -= int(self.matrix[a][d]*(.01*atk_unit.hp))
         if def_unit.hp > 0:
             atk_unit.hp -= int(self.matrix[d][a]*(.01*def_unit.hp))
@@ -157,6 +193,9 @@ class Rules(object):
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
     def end_turn(self):
+        self.grid.end_turn()
+        for u in self.grid.units:
+            u.ready = True
         self.history = []
         self.action = []
         self.state = None
@@ -247,7 +286,7 @@ class Rules(object):
                 if a and not a.allied(u):
                     attackable = True
             moved = (x,y) != (ox,oy)
-            if "indirect" in self.properties[u.c] and moved:
+            if "indirect" in self.properties[u.icon] and moved:
                 attackable = False
             if attackable:
                 self.choices.append("Attack")
@@ -270,7 +309,6 @@ class Rules(object):
         
         # End my turn.
         if opt == "End Turn":
-            self.grid.end_turn()
             return self.end_turn()
 
     # 
