@@ -2,22 +2,25 @@
 # are what give meaning to the pieces in a Grid, and is controlled (usually)
 # by a Controller that provides piecewise input.
 
-from . import widgets
+from . import grid, widgets
 
 import copy
 
 
-# Constants sent to the controller after processing.
-CTRL_COORD = 1
-CTRL_MENU = 2
-CTRL_UNDO = 3
+# Global strings. Stored to avoid mistyping.
+CTRL_COORD = "coord"
+CTRL_MENU = "menu"
+CTRL_UNDO = "undo"
+
+
+# 
 
 
 #
 class Rules(object):
-    def __init__(self, grid):
-        self.grid = grid
-        self.checkpoint = copy.deepcopy(grid)
+    def __init__(self, config):
+        self.grid = grid.Grid(config, self)
+        self.checkpoint = copy.deepcopy(self.grid)
 
         # The history contains all actions for this player turn.
         self.history = []
@@ -30,9 +33,91 @@ class Rules(object):
         # other
         self.alerts = []
 
+        # The first index is the attacker, the second is the defender.
+        # This information should really be stored in the Unit object
+        # itself. Ugh.
+        self.matrix = {}
+        self.matrix["i"] = {"i": 50, "T": 10, "M": 5, "H": 1, "L": 10}
+        self.matrix["T"] = {"i": 70, "T": 40, "M": 20, "H": 10, "L": 40}
+        self.matrix["M"] = {"i": 90, "T": 70, "M": 40, "H": 20, "L": 70}
+        self.matrix["H"] = {"i": 100, "T": 90, "M": 60, "H": 30, "L": 90}
+        self.matrix["L"] = {"i": 70, "T": 40, "M": 20, "H": 10, "L": 40}
+        self.properties = {}
+        self.properties["i"] = [] 
+        self.properties["T"] = []
+        self.properties["M"] = []
+        self.properties["H"] = []
+        self.properties["L"] = ["indirect"]
+
+
+    class Cell(grid.Cell):
+        def foo(self):
+            pass
+
+    #
+    class Unit(grid.Unit):
+        def foo(self):
+            pass
+
+    #
+    class Team(grid.Team):
+        def foo(self):
+            pass
+
+    # Get movement range of the unit at x,y. Returns nothing
+    # if the tile is empty or does not exist. All of the positions
+    # returned are guaranteed to be tiles that the unit could
+    # stop moving on.
+    def get_move_range(self, x, y):
+        unit = self.grid.unit_at(x,y)
+        if not unit:
+            return []
+
+        # Use the naive flood-fill algorithm to get neighboring
+        # tiles. TODO: handle allied units
+        report = []
+        def _floodfill((a,b),r):
+            t = self.grid.tile_at(a,b)
+            if t and (not t.unit or t.unit.allied(unit)):
+                if (a,b) not in report:
+                    report.append((a,b))
+                if r > 0:
+                    _floodfill((a-1,b),r-1)
+                    _floodfill((a+1,b),r-1)
+                    _floodfill((a,b-1),r-1)
+                    _floodfill((a,b+1),r-1)
+        _floodfill((x,y),unit.move)
+        
+        return [(x,y) for (x,y) in report if (not self.grid.unit_at(x,y) or
+                                              self.grid.unit_at(x,y) is unit)]
+
+
+
     # This is the attack action. This is what actually has side effects.
     def action_attack(self, atk_pos, def_pos):
-        pass
+        ax,ay = atk_pos
+        dx,dy = def_pos
+        atk_unit = self.grid.unit_at(ax,ay)
+        def_unit = self.grid.unit_at(dx,dy)
+
+        if not atk_unit: raise Exception("Attack square is empty.")
+        if not def_unit: raise Exception("Defend square is empty.")
+
+        # This is the basic attack formula.
+        a = atk_unit.c
+        d = def_unit.c
+        def_unit.hp -= int(self.matrix[a][d]*(.01*atk_unit.hp))
+        if def_unit.hp > 0:
+            atk_unit.hp -= int(self.matrix[d][a]*(.01*def_unit.hp))
+
+        # Remove destroyed units from grid and prevent HP from falling into
+        # the negatives.
+        if atk_unit.hp <= 0:
+            atk_unit.hp = 0
+            self.grid.remove_unit(ax,ay)
+        if def_unit.hp <= 0:
+            def_unit.hp = 0
+            self.grid.remove_unit(dx,dy)
 
     # 
     def pop_alerts(self):
@@ -133,7 +218,7 @@ class Rules(object):
         # give the controller the list of valid move locations.
         if u and u.team is team and u.ready:
             self.action.append((x,y))
-            self.choices = self.grid.get_move_range(x,y)
+            self.choices = self.get_move_range(x,y)
             return self.transition("moving")
 
         raise Exception("Shouldn't get here.")
@@ -155,16 +240,17 @@ class Rules(object):
             self.action.append((x,y))
             self.choices = []
 
-            a1 = self.grid.unit_at(x-1,y)
-            a2 = self.grid.unit_at(x+1,y)
-            a3 = self.grid.unit_at(x,y-1)
-            a4 = self.grid.unit_at(x,y+1)
+            # Determine if a target is in range.
             attackable = False
-            if a1 and not a1.allied(u): attackable = True
-            if a2 and not a2.allied(u): attackable = True
-            if a3 and not a3.allied(u): attackable = True
-            if a4 and not a4.allied(u): attackable = True
-            if attackable: self.choices.append("Attack")
+            for px,py in self.grid.get_range((x,y),1):
+                a = self.grid.unit_at(px,py)
+                if a and not a.allied(u):
+                    attackable = True
+            moved = (x,y) != (ox,oy)
+            if "indirect" in self.properties[u.c] and moved:
+                attackable = False
+            if attackable:
+                self.choices.append("Attack")
 
             self.grid.move_unit((ox,oy),(x,y))
             self.choices += ["Wait","Cancel"]
@@ -198,15 +284,11 @@ class Rules(object):
             x,y = self.action[-1]
             u = self.grid.unit_at(x,y)
 
-            a1 = self.grid.unit_at(x-1,y)
-            a2 = self.grid.unit_at(x+1,y)
-            a3 = self.grid.unit_at(x,y-1)
-            a4 = self.grid.unit_at(x,y+1)
-            attackable = False
-            if a1 and not a1.allied(u): self.choices.append((x-1,y))
-            if a2 and not a2.allied(u): self.choices.append((x+1,y))
-            if a3 and not a3.allied(u): self.choices.append((x,y-1))
-            if a4 and not a4.allied(u): self.choices.append((x,y+1))
+            # Get possible targets.
+            for px,py in self.grid.get_range((x,y),1):
+                a = self.grid.unit_at(px,py)
+                if a and not a.allied(u):
+                    self.choices.append((px,py))
 
             self.action.append(opt)
             return self.transition("attacking")
@@ -235,7 +317,7 @@ class Rules(object):
             
             start_hp = d.hp, a.hp
             #self.action_attack((ox,oy),(x,y))
-            self.grid.launch_attack((ox,oy),(x,y))
+            self.action_attack((ox,oy),(x,y))
             end_hp = d.hp, a.hp
 
             # Build the animation.

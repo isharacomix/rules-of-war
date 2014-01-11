@@ -5,7 +5,7 @@
 
 from graphics import gfx, draw
 
-from . import grid, widgets
+from . import rules, grid, widgets
 
 import sys
 import traceback
@@ -27,25 +27,27 @@ class Game(object):
                 cell["terrain"] = "road"
                 gdict["cells"].append(cell)
         unit1 = {}
-        unit1["type"] = "Infantry"
+        unit1["type"] = "i"
+        unit1["name"] = "Infantry"
         unit1["team"] = 0
         unit2 = {}
-        unit2["type"] = "Infantry"
+        unit2["type"] = "L"
+        unit2["name"] = "Artillery"
         unit2["team"] = 1
         gdict["cells"][4]["unit"] = unit1
         gdict["cells"][40]["unit"] = unit2
         team1 = {"name":"Red","color":"r"}
         team2 = {"name":"Blue","color":"b"}
         gdict["teams"] = [team1,team2]
-        g = grid.Grid(gdict)
+        r = rules.Rules(gdict)
 
-        self.g = grid.Controller(70,18,g)
+        self.g = grid.Controller(70,18,r)
         self.menu = None
         self.buff = widgets.Buffer(10,5)
         self.buff.write("Hello, world!")
     
     
-    def display_title(self):
+    def display(self):
         #gfx.clear()
         self.g.draw(1,1)
         if self.menu:
@@ -65,7 +67,7 @@ class Game(object):
             c = -1
             gfx.clear()
             while c != "q":
-                self.display_title()
+                self.display()
                 c = gfx.get_input()
                 if self.menu:
                     q = self.menu.handle_input(c)

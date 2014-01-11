@@ -3,9 +3,7 @@
 
 from graphics import draw
 
-from . import widgets, rules
-
-import copy
+from . import widgets
 
 
 # The Grid is a game-agnostic representation of the world's entities. It
@@ -19,8 +17,10 @@ import copy
 #   teams: (list) the teams in the map
 #   allies: (list) the teams that are allied in a list of lists of ints
 #   variables: (dictionary) a dictionary of user-defined variables
+#
+# Danger: Do not store 'rules' in a variable. Should fall out of scope.
 class Grid(object):
-    def __init__(self, config):
+    def __init__(self, config, rules):
         self.grid = []
         self.w, self.h = config["w"], config["h"]
         for y in range(self.h):
@@ -37,7 +37,7 @@ class Grid(object):
         # Load the teams first, since cells and units reference them.
         # Then set up the alliances.
         for t in config["teams"]:
-            this = Team( t["name"], t["color"] )
+            this = rules.Team( t["name"], t["color"] )
             this.variables = t.get("variables",{})
             self.teams.append(this)
         for alist in config.get("allies",[]):
@@ -55,14 +55,15 @@ class Grid(object):
         #   team: (int) the team that owns the terrain, if any
         #   variables: (dict) User-defined variables
         for c in config["cells"]:
-            this = Cell(c["terrain"])
+            this = rules.Cell(c["terrain"])
             self.grid[c["y"]][c["x"]] = this
             this.variables = c.get("variables",{})
             if "owner" in c:
                 this.team = self.teams[c["team"]]
             if "unit" in c:
                 def _process_units(unit):
-                    u = Unit(unit["type"],self.teams[unit["team"]])
+                    u = rules.Unit(unit["name"],unit["type"],
+                                   self.teams[unit["team"]])
                     u.variables = unit.get("variables",{})
                     self.units.append(u)
                     for u in unit.get("carrying",[]):
@@ -74,50 +75,48 @@ class Grid(object):
                 
 
     # Get the tile at x,y. Returns None if out of range.
+    # TODO (delete this function)
     def get(self, x, y):
+        return self.tile_at(x,y)
+    
+    # Get the tile at x,y. Returns None if out of range.
+    def tile_at(self, x, y):
         if (x < 0 or x >= self.w or y < 0 or y >= self.h):
             return None
         return self.grid[y][x]
-    
+
     # Get the unit at x,y.
     def unit_at(self, x, y):
         tile = self.get(x,y)
         if tile: return tile.unit
         else: return None
 
-    # Return the actions that the given unit can take if it were
-    # at x,y.
-    def actions(self, unit, x, y):
-        acts = []
-        return acts+["Wait","Back"]
+    # Get a range of coordinates, usually for an attack range. Coordinates
+    # may not actually be cells.
+    def get_range(self, center, start, end=None):
+        if end is None:
+            end = start
 
-    # Get movement range of the unit at x,y. Returns nothing
-    # if the tile is empty or does not exist. All of the positions
-    # returned are guaranteed to be tiles that the unit could
-    # stop moving on.
-    def get_move_range(self, x, y):
-        tile = self.get(x,y)
-        if not tile or not tile.unit:
-            return []
-        unit = tile.unit
-
-        # Use the naive flood-fill algorithm to get neighboring
-        # tiles. TODO: handle allied units
         report = []
-        def _floodfill((a,b),r):
-            t = self.get(a,b)
-            if t and (not t.unit or t.unit.allied(unit)):
-                if (a,b) not in report:
-                    report.append((a,b))
-                if r > 0:
-                    _floodfill((a-1,b),r-1)
-                    _floodfill((a+1,b),r-1)
-                    _floodfill((a,b-1),r-1)
-                    _floodfill((a,b+1),r-1)
-        _floodfill((x,y),unit.move)
-        
-        return [(x,y) for (x,y) in report if (not self.unit_at(x,y) or
-                                              self.unit_at(x,y) is unit)]
+        x,y = center
+        for r in range(start,end+1):
+            for i in range(r):
+                report.append((x+i,y+(r-i)))
+                report.append((x+i,y-(r-i)))
+                report.append((x+(r-i),y+i))
+                report.append((x-(r-i),y+i))
+        return report
+
+    # Return distance (zero norm) between two points.
+    def dist(self, start, end):
+        x1,y1 = start
+        x2,y2 = end
+        dx = x1-x2
+        dy = y1-y2
+        if (dx < 0): dx *= -1
+        if (dy < 0): dy *= -1
+        return dx+dy
+
 
     # Moves a unit from the old tile to the new tile. Will
     # throw exception if move is illegal. CHECK FIRST.
@@ -129,23 +128,6 @@ class Grid(object):
         tile.unit = None
         tile = self.get(x,y)
         tile.unit = unit
-
-    # Launch an attack from the attack coordinates to the defend
-    # coordinates. Will throw exception if move is illegal.
-    # CHECK FIRST.
-    def launch_attack(self, attacker, defender):
-        ax,ay = attacker
-        dx,dy = defender
-        atk_unit = self.get(ax,ay).unit
-        def_unit = self.get(dx,dy).unit
-        atk_unit.attack(def_unit)
-        if def_unit.hp >= 0: #and can counter
-            def_unit.attack(atk_unit)
-        
-        # Destroy dead units.
-        if def_unit.hp <= 0: self.remove_unit(dx,dy)
-        if atk_unit.hp <= 0: self.remove_unit(ax,ay)
-
 
     # Add a unit to the game. Throws an exception if the tile
     # does not exist or if the tile is occupied.
@@ -214,9 +196,9 @@ class Cell(object):
 # Units are the pieces that move about the game board. Units belong to a
 # team and can be moved about by taking actions.
 class Unit(object):
-    def __init__(self, name, team):
+    def __init__(self, name, char, team):
         self.name = name
-        self.c = "@"
+        self.c = char
         self.team = team
         self.variables = {}
 
@@ -237,7 +219,7 @@ class Unit(object):
         # Build the animation for this unit based on values
         # that are running low (hp, fuel, etc).
         frames = [self.c]
-        if (self.hp <= 90):
+        if (self.hp < 90):
             frames.append( str((self.hp//10)+1)  )
         if int(self.anim) >= len(frames):
             self.anim = 0.0
@@ -278,11 +260,11 @@ class Team(object):
 # control back and forth between it. It doesn't usually need a
 # direct copy of the grid, except for its camera.
 class Controller(object):
-    def __init__(self, w, h, grid):
-        self.world = rules.Rules(grid)
+    def __init__(self, w, h, rules):
+        self.world = rules
         self.w = w
         self.h = h
-        self.cam = widgets.Camera(w,h,grid)
+        self.cam = widgets.Camera(w,h,self.world.grid)
 
         self.alerts = []
         self.menu = None
@@ -308,11 +290,11 @@ class Controller(object):
         # a menu or highlight tiles.
         if r:
             self.cam.blink = []
-            if r == rules.CTRL_COORD:
+            if r == "coord":
                 self.cam.blink = self.world.choices
-            if r == rules.CTRL_MENU:
+            if r == "menu":
                 self.menu = widgets.Menu(self.world.choices),cx,cy
-            if r == rules.CTRL_UNDO:
+            if r == "undo":
                 self.cam.grid = self.world.grid
 
         # This returns nothing.
