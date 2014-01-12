@@ -21,9 +21,9 @@ from . import widgets
 #
 # Danger: Do not store 'rules' in a variable. Should fall out of scope.
 class Grid(object):
-    def __init__(self, config, rules):
+    def __init__(self, data, rules):
         self.grid = []
-        self.w, self.h = config["w"], config["h"]
+        self.w, self.h = data["w"], data["h"]
         for y in range(self.h):
             row = []
             for x in range(self.w):
@@ -31,16 +31,17 @@ class Grid(object):
             self.grid.append(row)
         self.teams = []
         self.units = []
-        self.variables = config.get("variables",{})
+        self.variables = data.get("variables",{})
         self.day = 0
         self.turn = 0
 
         # Load the teams first, since cells and units reference them.
         # Then set up the alliances.
-        for t in config["teams"]:
+        for t in data["teams"]:
             this = rules.make_team( t )
+            this.variables = t.get("variables",{})
             self.teams.append(this)
-        for alist in config.get("allies",[]):
+        for alist in data.get("allies",[]):
             for a in alist:
                 for b in alist:
                     self.teams[a].allies.append( self.teams[b] )
@@ -50,11 +51,13 @@ class Grid(object):
         # we, have to recursively dig them out.
         #   x: (int) x position
         #   y: (int) y position
-        #   terrain: (string) the name of the terrain
+        #   name: (string) the name of the terrain
         #   unit: the unit on this terrain, if one
         #   team: (int) the team that owns the terrain, if any
         #   variables: (dict) User-defined variables
-        for c in config["cells"]:
+        # There may be other values in this cell that will be parsed by
+        # the factory of the rules.
+        for c in data["cells"]:
             this = rules.make_cell(c)
             self.grid[c["y"]][c["x"]] = this
             this.variables = c.get("variables",{})
@@ -64,9 +67,10 @@ class Grid(object):
                 def _process_units(unit):
                     u = rules.make_unit(unit)
                     u.team = self.teams[unit["team"]]
+                    u.variables = unit.get("variables",{})
                     self.units.append(u)
                     for u in unit.get("carrying",[]):
-                        _process_units(u)
+                        u.carrying.append(_process_units(u))
                     return u
                 this.unit = _process_units(c["unit"])
                 
@@ -108,7 +112,6 @@ class Grid(object):
         if (dy < 0): dy *= -1
         return dx+dy
 
-
     # Moves a unit from the old tile to the new tile. Will
     # throw exception if move is illegal. CHECK FIRST.
     def move_unit(self, old, new):
@@ -131,18 +134,23 @@ class Grid(object):
         unit.team = team
         self.units.append(unit)
 
-    #
+    # Remove a unit from the game. This will not only remove the
+    # unit, but all units that it is carrying.
     def remove_unit(self, x, y):
         tile = self.tile_at(x,y)
-        if tile.unit in self.units:
+        unit = tile.unit
+        if unit in self.units:
             self.units.remove(tile.unit)
+        for u in unit.carrying:
+            if u in self.units:
+                self.units.remove(u)
         tile.unit = None
 
-    #
+    # Return the team currently performing its turn.
     def current_team(self):
         return self.teams[self.turn]
 
-    #
+    # End the turn and proceed to the next team.
     def end_turn(self):
         current_team = self.teams[self.turn]
         self.turn += 1
@@ -184,14 +192,18 @@ class Unit(object):
         self.carrying = []
         self.variables = {}
 
+    # Draw this unit on the screen.
     def draw(self, x, y, col=""):
         draw.char(x, y, self.icon, self.team.color+"!"+col)
 
-    def allied(self, unit):
-        return unit.team == self.team or unit.team in self.team.allies
+    # Returns true if the two units (or cells) are allied.
+    def allied(self, other):
+        return other.team == self.team or other.team in self.team.allies
 
 
-#
+# The game is played by teams. Each team commands an army of units and
+# may also have other variables such as money, etc, governed by the
+# subclass of the current set of rules.
 class Team(object):
     def __init__(self, name, color):
         self.name = name
@@ -200,12 +212,9 @@ class Team(object):
         self.active = True
         self.variables = {}
 
+    # Returns true if the two teams are allied.
     def allied(self, team):
         return team == self or team in self.allies
-
-
-
-
 
 
 # The controller of the grid. It takes a rules object and passes

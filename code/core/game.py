@@ -15,6 +15,7 @@ import traceback
 # data, and everything else.
 class Game(object):
     def __init__(self):
+        rdict = {}
         gdict = {}
         gdict["w"] = 30
         gdict["h"] = 15
@@ -39,9 +40,12 @@ class Game(object):
         team1 = {"name":"Red","color":"r"}
         team2 = {"name":"Blue","color":"b"}
         gdict["teams"] = [team1,team2]
-        r = rules.Rules(gdict)
+        rdict["grid"] = gdict
 
+        # The most basic item is the rules.
+        r = rules.Rules(rdict)
         self.g = grid.Controller(70,18,r)
+
         self.menu = None
         self.buff = widgets.Buffer(10,5)
         self.buff.write("Hello, world!")

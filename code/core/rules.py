@@ -14,15 +14,30 @@ CTRL_MENU = "menu"
 CTRL_UNDO = "undo"
 
 
+# Custom Cell subclass. Contains information such as terrain defensive bonus.
 class Cell(grid.Cell):
-    def foo(self):
-        pass
+    def __init__(self, name, icon, color):
+        super(Cell, self).__init__(name, icon, color)
 
+# Custom Team subclass. Contains information such as resources.
 class Team(grid.Team):
-    def foo(self):
-        pass
+    def __init__(self, name, color):
+        super(Team, self).__init__(name, color)
+        self.resources = 0
 
+# Custom Unit subclass. Contains information such as HP, readiness, and
+# a custom drawing method.
 class Unit(grid.Unit):
+    def __init__(self, name, icon):
+        super(Unit, self).__init__(name, icon)
+        self.hp = 100
+        self.ready = True
+        self.move = 3
+        self.anim = 0.0
+
+    # This drawing method overrides the default method by handling
+    # animations for when this unit is low on resources such as HP,
+    # ammo, etc.
     def draw(self, x, y, col):
         self.anim += .02
 
@@ -43,14 +58,23 @@ class Unit(grid.Unit):
         draw.char(x, y, img, color)
 
 
-
+# The Rules serve two purposes. Firstly, they are a factory that produces
+# new objects according the needs of the game being played. Secondly, they
+# serve as a state machine for performing legal actions and changing the
+# state of the game grid.
 #
+# Required methods:
+#   make_unit
+#   make_team
+#   make_cell
+#   pop_alerts
+#   process
 class Rules(object):
-    def __init__(self, config):
+    def __init__(self, data):
         # TODO: load the rules definition (types of units and properties)
 
         # Create the grid with what's left.
-        self.grid = grid.Grid(config, self)
+        self.grid = grid.Grid(data["grid"], self)
         self.checkpoint = copy.deepcopy(self.grid)
 
         # The history contains all actions for this player turn.
@@ -83,10 +107,6 @@ class Rules(object):
     # This function produces a Unit object based on the unit code.
     def make_unit(self, data):
         u = Unit(data["name"], data["icon"])
-        u.hp = 100
-        u.ready = True
-        u.move = 3
-        u.anim = 0.0
         return u
 
     # This function produces a Cell object based on the terrain code.
@@ -182,9 +202,15 @@ class Rules(object):
         return self.transition(None)
 
     # When we undo, we go back to a previous spot in the history.
-    def undo(self):
-        cp,action = self.history.pop()
-        self.grid = cp
+    def undo(self, total=False):
+        if len(self.history) > 0:
+            if total:
+                cp,action = self.history[0]
+                self.history = []
+            else:
+                cp,action = self.history.pop()
+            self.grid = cp
+            self.checkpoint = copy.deepcopy(cp)
         self.action = []
         self.state = None
         self.choices = []
@@ -242,7 +268,7 @@ class Rules(object):
         # If no unit, check for terrain
         if not u:
             self.state = "main menu"
-            self.choices = ["Back","End Turn"]
+            self.choices = ["Back","End Turn","Undo","Start Over"]
             return self.transition("main menu")
 
         # If unit is not friendly, return nothing.
@@ -310,6 +336,12 @@ class Rules(object):
         # End my turn.
         if opt == "End Turn":
             return self.end_turn()
+
+        if opt == "Undo":
+            return self.undo()
+
+        if opt == "Start Over":
+            return self.undo(True)
 
     # 
     def process_action(self, opt):
