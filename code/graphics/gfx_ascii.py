@@ -90,7 +90,7 @@ def get_input():
     global _screen, _keymap
     if _screen:
         c = _screen.getch()
-        #curses.flushinp()
+        curses.flushinp()
         if c == 27: return "escape"
         elif c == 10 or c == 13: return "enter"
         elif c > 0 and c < 256: return "%c"%c

@@ -23,6 +23,7 @@ from . import widgets
 class Grid(object):
     def __init__(self, data, rules):
         self.grid = []
+        self.name = data["name"]
         self.w, self.h = data["w"], data["h"]
         for y in range(self.h):
             row = []
@@ -174,12 +175,9 @@ class Cell(object):
     # should be drawn. If there is a unit on this terrain,
     # the unit's draw will be prioritized.
     def draw(self, x, y, col=""):
-        if self.unit:
-            self.unit.draw(x, y, col)
-        else:
-            if self.team:
-                col += self.team.color +"!"
-            draw.char(x, y, self.icon, self.color+col)
+        if self.team:
+            col += self.team.color +"!"
+        draw.char(x, y, self.icon, self.color+col)
 
 
 # Units are the pieces that move about the game board. Units belong to a
@@ -225,7 +223,12 @@ class Controller(object):
         self.world = rules
         self.w = w
         self.h = h
-        self.cam = widgets.Camera(w,h,self.world.grid)
+
+        # The elements of the grid.
+        self.cam = widgets.Camera(w-16,h,self.world.grid)
+        self.buff1 = widgets.Buffer(15,7)
+        self.buff2 = widgets.Buffer(15,7)
+        self.buff3 = widgets.Buffer(15,4)
 
         self.alerts = []
         self.menu = None
@@ -258,8 +261,15 @@ class Controller(object):
             if r == "undo":
                 self.cam.grid = self.world.grid
 
-        # This returns nothing.
-        self.alerts += self.world.pop_alerts()
+        # Get intel from the world's information method.
+        cx,cy = self.cam.cursor
+        alerts, i1, i2, i3 = self.world.pump_info(cx,cy)
+        self.alerts += alerts
+        for (info,buff) in ((i1,self.buff1),(i2,self.buff2),(i3,self.buff3)):
+            if info is not None:
+                buff.clear()
+                for s,c in info:
+                    buff.write(s,c)
         return None
 
     # Draw the grid to the terminal using the gfx library. Specify the
@@ -267,6 +277,9 @@ class Controller(object):
     # top-left of the map (including outside of the map).
     def draw(self, x, y, col=None):
         self.cam.draw(x,y)
+        self.buff1.draw(x+(self.w-15),y)
+        self.buff2.draw(x+(self.w-15),y+8)
+        self.buff3.draw(x+(self.w-15),y+16)
         cx,cy = self.cam.viewport
 
         if self.menu:

@@ -17,6 +17,7 @@ class Shell(object):
     def __init__(self):
         rdict = {}
         gdict = {}
+        gdict["name"] = "Hello World"
         gdict["w"] = 30
         gdict["h"] = 15
         gdict["cells"] = []
@@ -41,22 +42,24 @@ class Shell(object):
         team2 = {"name":"Blue","color":"b"}
         gdict["teams"] = [team1,team2]
         rdict["grid"] = gdict
+        rdict["history"] = []
+        rdict['history'].append([[(0,4),(1,4),"Wait"]])
 
         # The most basic item is the rules.
         r = game.Game(rdict)
-        self.g = grid.Controller(70,18,r)
+        self.g = grid.Controller(76,20,r)
 
         self.menu = None
-        self.buff = widgets.Buffer(10,5)
-        self.buff.write("Hello, world!")
+        #self.buff = widgets.Buffer(10,5)
+        #self.buff.write("Hello, world!")
     
     
     def display(self):
         #gfx.clear()
-        self.g.draw(1,1)
+        self.g.draw(2,2)
         if self.menu:
             self.menu.draw(1,20,"r")
-        self.buff.draw(1,19)
+        #self.buff.draw(1,19)
 
     
     # Runs an interactive session of our game with the player until either

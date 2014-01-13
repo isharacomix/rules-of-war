@@ -5,7 +5,7 @@
 from . import grid, widgets
 from graphics import draw
 
-import copy
+import copy, json
 
 
 # Global strings. Stored to avoid mistyping.
@@ -72,6 +72,7 @@ class Unit(grid.Unit):
 class Game(object):
     def __init__(self, data):
         # TODO: load the rules definition (types of units and properties)
+        self.data = data
 
         # Create the grid with what's left.
         self.grid = grid.Grid(data["grid"], self)
@@ -87,6 +88,7 @@ class Game(object):
 
         # other
         self.alerts = []
+        self.start = True
 
         # The first index is the attacker, the second is the defender.
         # This information should really be stored in the Unit object
@@ -103,6 +105,23 @@ class Game(object):
         self.properties["M"] = []
         self.properties["H"] = []
         self.properties["L"] = ["indirect"]
+
+        # Replay turn history.
+        replay = self.data.pop("history",[])
+        self.data["history"] = []
+        for turn in replay:
+            for action in turn:
+                for step in action:
+                    self.process(step)
+            self.end_turn()
+        self.alerts = []
+
+
+
+    # Return a JSON string that can be saved to a file. The current
+    # turn in progress will be lost.
+    def save(self):
+        return json.dumps(self.data)
 
     # This function produces a Unit object based on the unit code.
     def make_unit(self, data):
@@ -176,10 +195,73 @@ class Game(object):
             self.grid.remove_unit(dx,dy)
 
     # 
-    def pop_alerts(self):
+    def pump_info(self, x, y):
+        if self.start:
+            t = self.grid.current_team()
+            m1 = "%s: Day %d"%(self.grid.name, self.grid.day)
+            m2 = "%s Advance"%t.name
+            w = max(len(m1),len(m2))+1
+            a = widgets.Alert(w,2,m1+"\n"+m2,t.color)
+            a.time = 50
+            self.alerts.append((a,10,5))
+            self.start = False
         report = self.alerts
         self.alerts = []
-        return report
+        
+        # Info 1 is global team information.
+        info1 = [ ("Day %d"%self.grid.day,"w!")]
+        for t in self.grid.teams:
+            info1.append( (t.name, t.color) )
+
+        # If attack is in the action, we need to get the estimated
+        # damage to show the player.
+        dmg1, dmg2 = "",""
+        if "Attack" in self.action and (x,y) in self.choices:
+            ax,ay = self.action[1]
+            atk_unit = self.grid.unit_at(ax,ay)
+            def_unit = self.grid.unit_at(x,y)
+            if atk_unit and def_unit:
+                a = atk_unit.icon
+                d = def_unit.icon
+                est = self.matrix[a][d]*(.01*atk_unit.hp)
+                if est > def_unit.hp:
+                    est = def_unit.hp
+                dmg1 = "-%d%%"%(self.matrix[a][d]*(.01*atk_unit.hp))
+                dmg2 = "-%d%%"%(self.matrix[d][a]*(.01*(def_unit.hp-est)))
+
+        # Info 2 is for the intel on the hovering tile.
+        info2 = []
+        t = self.grid.tile_at(x,y)
+        tcol = "w"
+        if t.team:
+            tcol = t.team.color
+        info2 += [ (t.name,tcol),
+                   ("DEF +?",tcol)]
+        u = t.unit
+        if u:
+            ucol = u.team.color
+            info2 += [ (" ",""),
+                       (u.name,ucol+"!"),
+                       ("HP %d%% %s"%(u.hp,dmg1),ucol) ]
+            
+        
+
+        # Info 3 is for the unit that is currently selected.
+        info3 = []
+        if len(self.action) > 0:
+            x,y = self.action[0]
+            if len(self.action) > 1:
+                x,y = self.action[1]
+            t = self.grid.tile_at(x,y)
+            u = t.unit
+            if u:
+                col = u.team.color
+                info3 = [(u.name,col+"!"),
+                         ("DEF +?",col),
+                         ("HP %d%% %s"%(u.hp,dmg2),col)]
+            
+
+        return report, info1, info2, info3
 
     # This sets the state back to start while also restoring the previous
     # checkpoint of the world. When the controller gets CTRL_UNDO, it is
@@ -207,6 +289,7 @@ class Game(object):
             if total:
                 cp,action = self.history[0]
                 self.history = []
+                self.start = True
             else:
                 cp,action = self.history.pop()
             self.grid = cp
@@ -219,9 +302,13 @@ class Game(object):
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
     def end_turn(self):
+        if self.state != None and self.action != []:
+            raise Exception("Can't end right now")
+        self.start = True
         self.grid.end_turn()
         for u in self.grid.units:
             u.ready = True
+        self.data["history"].append([acts for (cp,acts) in self.history])
         self.history = []
         self.action = []
         self.state = None

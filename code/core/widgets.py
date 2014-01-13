@@ -52,20 +52,22 @@ class Alert(object):
         self.col = col
         self.write(msg)
 
-    def write(self, s):
+    def write(self, msg):
         current = ""
         report = []
-        for c in s:
-            current += c
-            if len(current) >= self.w:
-                if " " in current.rstrip():
-                    old,current = current.rstrip().rsplit(None,1)
-                    report.append(old)
-                else:
-                    report.append(current)
-                    current = ""
-        if current:
-            report.append(current)
+        for s in msg.split("\n"):
+            for c in s:
+                current += c
+                if len(current) >= self.w:
+                    if " " in current.rstrip():
+                        old,current = current.rstrip().rsplit(None,1)
+                        report.append(old)
+                    else:
+                        report.append(current)
+                        current = ""
+            if current:
+                report.append(current)
+                current = ""
         report.reverse()
         self.text = report
 
@@ -135,6 +137,11 @@ class Buffer(object):
         self.text = report + self.text
         self.where = 0
 
+    # Clear the buffer.
+    def clear(self):
+        self.text = []
+        self.where = 0
+
     # Positive numbers scroll to newer elements, and negative
     # numbers scroll to older ones. "None" will scroll to the
     # end.
@@ -159,6 +166,8 @@ class Buffer(object):
         draw.fill(x, y, self.w, self.h)
         w = self.where
         i = y+self.h
+        if len(self.text) < self.h:
+            i -= (self.h - len(self.text))
         while i > y and w < len(self.text):
             i -= 1
             s,c = self.text[w]
@@ -229,4 +238,7 @@ class Camera(object):
                 
                 if ( tile and (tx-x >= 0) and (ty-y >= 0) and
                      (not w or tx < x+w) and (not h or ty < y+h)):
-                    tile.draw(tx,ty,cur)
+                    if tile.unit:
+                        tile.unit.draw(tx,ty,cur)
+                    else:
+                        tile.draw(tx,ty,cur)
