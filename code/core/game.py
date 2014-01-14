@@ -16,24 +16,41 @@ CTRL_UNDO = "undo"
 
 # Custom Cell subclass. Contains information such as terrain defensive bonus.
 class Cell(grid.Cell):
-    def __init__(self, name, icon, color):
-        super(Cell, self).__init__(name, icon, color)
+    def __init__(self, name, rules):
+        super(Cell, self).__init__(name, rules["icon"], rules["color"])
+        self.defense = rules["defense"]
+        self.properties = list(rules.get("properties",[]))
+        self.hp = 100
+        self.cash = rules.get("cash",0)
 
 # Custom Team subclass. Contains information such as resources.
 class Team(grid.Team):
     def __init__(self, name, color):
         super(Team, self).__init__(name, color)
-        self.resources = 0
+        self.cash = 0
 
 # Custom Unit subclass. Contains information such as HP, readiness, and
 # a custom drawing method.
 class Unit(grid.Unit):
-    def __init__(self, name, icon):
-        super(Unit, self).__init__(name, icon)
+    def __init__(self, name, rules):
+        super(Unit, self).__init__(name, rules["icon"])
         self.hp = 100
         self.ready = True
-        self.move = 3
+        self.move = rules["move"]
         self.anim = 0.0
+        self.damage = dict(rules["damage"])
+        self.properties = list(rules.get("properties",[]))
+        self.terrain = dict(rules["terrain"])
+
+    # Simulate an attack from this unit on a target including unit
+    # bonuses and terrain effects.
+    def simulate(self, target, terrain, hp=None):
+        if not hp: hp = self.hp
+        if target in self.damage:
+            base = self.damage[target]
+            cover = 1.0 - (.1*terrain.defense)
+            return int(base*.01*hp*cover)
+        return None
 
     # This drawing method overrides the default method by handling
     # animations for when this unit is low on resources such as HP,
@@ -90,22 +107,6 @@ class Game(object):
         self.alerts = []
         self.start = True
 
-        # The first index is the attacker, the second is the defender.
-        # This information should really be stored in the Unit object
-        # itself. Ugh.
-        self.matrix = {}
-        self.matrix["i"] = {"i": 50, "T": 10, "M": 5, "H": 1, "L": 10}
-        self.matrix["T"] = {"i": 70, "T": 40, "M": 20, "H": 10, "L": 40}
-        self.matrix["M"] = {"i": 90, "T": 70, "M": 40, "H": 20, "L": 70}
-        self.matrix["H"] = {"i": 100, "T": 90, "M": 60, "H": 30, "L": 90}
-        self.matrix["L"] = {"i": 70, "T": 40, "M": 20, "H": 10, "L": 40}
-        self.properties = {}
-        self.properties["i"] = [] 
-        self.properties["T"] = []
-        self.properties["M"] = []
-        self.properties["H"] = []
-        self.properties["L"] = ["indirect"]
-
         # Replay turn history.
         replay = self.data.pop("history",[])
         self.data["history"] = []
@@ -116,8 +117,6 @@ class Game(object):
             self.end_turn()
         self.alerts = []
 
-
-
     # Return a JSON string that can be saved to a file. The current
     # turn in progress will be lost.
     def save(self):
@@ -125,12 +124,14 @@ class Game(object):
 
     # This function produces a Unit object based on the unit code.
     def make_unit(self, data):
-        u = Unit(data["name"], data["icon"])
+        name = data["name"]
+        u = Unit(name, self.data["rules"]["units"][name])
         return u
 
     # This function produces a Cell object based on the terrain code.
     def make_cell(self, data):
-        c = Cell(data["name"],'.','g')
+        name = data["name"]
+        c = Cell(name, self.data["rules"]["terrain"][name])
         return c
 
     # This function produces a team.
@@ -151,17 +152,19 @@ class Game(object):
         # Use the naive flood-fill algorithm to get neighboring
         # tiles. TODO: handle allied units
         report = []
-        def _floodfill((a,b),r):
+        def _floodfill((a,b),r,top=False):
             t = self.grid.tile_at(a,b)
             if t and (not t.unit or t.unit.allied(unit)):
-                if (a,b) not in report:
+                if not top:
+                    r -= unit.terrain.get(t.name,r)
+                if (a,b) not in report and t.name in unit.terrain:
                     report.append((a,b))
                 if r > 0:
-                    _floodfill((a-1,b),r-1)
-                    _floodfill((a+1,b),r-1)
-                    _floodfill((a,b-1),r-1)
-                    _floodfill((a,b+1),r-1)
-        _floodfill((x,y),unit.move)
+                    _floodfill((a-1,b),r)
+                    _floodfill((a+1,b),r)
+                    _floodfill((a,b-1),r)
+                    _floodfill((a,b+1),r)
+        _floodfill((x,y),unit.move,True)
         
         return [(x,y) for (x,y) in report if (not self.grid.unit_at(x,y) or
                                               self.grid.unit_at(x,y) is unit)]
@@ -179,39 +182,40 @@ class Game(object):
         if not def_unit: raise Exception("Defend square is empty.")
 
         # This is the basic attack formula.
-        a = atk_unit.icon
-        d = def_unit.icon
-        def_unit.hp -= int(self.matrix[a][d]*(.01*atk_unit.hp))
+        a_terrain = self.grid.tile_at(ax,ay)
+        d_terrain = self.grid.tile_at(dx,dy)
+        def_unit.hp -= atk_unit.simulate(def_unit.name, d_terrain)
         if def_unit.hp > 0:
-            atk_unit.hp -= int(self.matrix[d][a]*(.01*def_unit.hp))
+            atk_unit.hp -= def_unit.simulate(atk_unit.name, a_terrain)
 
         # Remove destroyed units from grid and prevent HP from falling into
         # the negatives.
         if atk_unit.hp <= 0:
             atk_unit.hp = 0
+            a_terrain.hp = 100
             self.grid.remove_unit(ax,ay)
         if def_unit.hp <= 0:
             def_unit.hp = 0
+            d_terrain.hp = 100
             self.grid.remove_unit(dx,dy)
 
     # 
     def pump_info(self, x, y):
         if self.start:
-            t = self.grid.current_team()
-            m1 = "%s: Day %d"%(self.grid.name, self.grid.day)
-            m2 = "%s Advance"%t.name
-            w = max(len(m1),len(m2))+1
-            a = widgets.Alert(w,2,m1+"\n"+m2,t.color)
-            a.time = 50
-            self.alerts.append((a,10,5))
-            self.start = False
+            self.start_turn()
         report = self.alerts
         self.alerts = []
         
         # Info 1 is global team information.
         info1 = [ ("Day %d"%self.grid.day,"w!")]
         for t in self.grid.teams:
-            info1.append( (t.name, t.color) )
+            money = "$%d"%t.cash
+            if t.cash >= 10000:
+                money = "$%dK"%(t.cash/1000)
+            if t.cash >= 1000000:
+                money = "$RICH"
+            space = " "*(14-len(t.name[:8])-len(money))
+            info1.append( ("%s%s%s"%(t.name[:8], space, money), t.color) )
 
         # If attack is in the action, we need to get the estimated
         # damage to show the player.
@@ -221,13 +225,14 @@ class Game(object):
             atk_unit = self.grid.unit_at(ax,ay)
             def_unit = self.grid.unit_at(x,y)
             if atk_unit and def_unit:
-                a = atk_unit.icon
-                d = def_unit.icon
-                est = self.matrix[a][d]*(.01*atk_unit.hp)
+                a_terrain = self.grid.tile_at(ax,ay)
+                d_terrain = self.grid.tile_at(x,y)
+                est = atk_unit.simulate(def_unit.name,d_terrain)
+                dmg1 = "-%d%%"%est
                 if est > def_unit.hp:
                     est = def_unit.hp
-                dmg1 = "-%d%%"%(self.matrix[a][d]*(.01*atk_unit.hp))
-                dmg2 = "-%d%%"%(self.matrix[d][a]*(.01*(def_unit.hp-est)))
+                dmg2 = "-%d%%"%(def_unit.simulate(atk_unit.name,a_terrain,
+                                                  atk_unit.hp-est))
 
         # Info 2 is for the intel on the hovering tile.
         info2 = []
@@ -236,10 +241,12 @@ class Game(object):
         if t.team:
             tcol = t.team.color
         info2 += [ (t.name,tcol),
-                   ("DEF +?",tcol)]
+                   ("DEF +%d"%t.defense,tcol)]
         u = t.unit
         if u:
             ucol = u.team.color
+            if t.hp < 100:
+                info2 += [("Capturing: %d%%"%t.hp,ucol)]
             info2 += [ (" ",""),
                        (u.name,ucol+"!"),
                        ("HP %d%% %s"%(u.hp,dmg1),ucol) ]
@@ -257,7 +264,7 @@ class Game(object):
             if u:
                 col = u.team.color
                 info3 = [(u.name,col+"!"),
-                         ("DEF +?",col),
+                         ("DEF +%d"%t.defense,col),
                          ("HP %d%% %s"%(u.hp,dmg2),col)]
             
 
@@ -298,6 +305,26 @@ class Game(object):
         self.state = None
         self.choices = []
         return CTRL_UNDO
+
+    #
+    def start_turn(self):
+        t = self.grid.current_team()
+
+        # Give the player their money.
+        for tile in self.grid.all_tiles():
+            if tile.team is t:
+                t.cash += tile.cash
+
+        # Make the turn-start alert.
+        m1 = "%s: Day %d"%(self.grid.name, self.grid.day)
+        m2 = "%s Advance"%t.name
+        w = max(len(m1),len(m2))+1
+        a = widgets.Alert(w,2,m1+"\n"+m2,t.color)
+        a.time = 50
+        self.alerts.append((a,10,5))
+
+        self.start = False
+
 
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
@@ -358,17 +385,10 @@ class Game(object):
             self.choices = ["Back","End Turn","Undo","Start Over"]
             return self.transition("main menu")
 
-        # If unit is not friendly, return nothing.
-        if u and u.team is not team:
-            return self.transition(None)
-
-        # If unit is friendly, but not ready, return nothing.
-        if u and u.team is team and not u.ready:
-            return self.transition(None)
-
-        # If unit is friendly and ready, switch to moving state and
-        # give the controller the list of valid move locations.
-        if u and u.team is team and u.ready:
+        # Even if the unit isn't ours (or isn't ready) we still enter the
+        # "move" state so that we can see its movement range. Actually
+        # moving the unit will be stopped at the process_moving step.
+        if u:
             self.action.append((x,y))
             self.choices = self.get_move_range(x,y)
             return self.transition("moving")
@@ -388,9 +408,14 @@ class Game(object):
         team = self.grid.current_team()
         
         # If coord was in range, move the unit and return possible actions.
-        if (x,y) in self.choices:
+        if (x,y) in self.choices and u.team is team and u.ready:
             self.action.append((x,y))
             self.choices = []
+
+            moved = (x,y)!=(ox,oy)
+            if moved:
+                t = self.grid.tile_at(ox,oy)
+                t.hp = 100
 
             # Determine if a target is in range.
             attackable = False
@@ -398,11 +423,17 @@ class Game(object):
                 a = self.grid.unit_at(px,py)
                 if a and not a.allied(u):
                     attackable = True
-            moved = (x,y) != (ox,oy)
-            if "indirect" in self.properties[u.icon] and moved:
+            if "indirect" in u.properties and moved:
                 attackable = False
             if attackable:
                 self.choices.append("Attack")
+
+            # If the cell you are on is capturable, add that option to
+            # the list.
+            t = self.grid.tile_at(x,y)
+            if ("capture" in t.properties and "capture" in u.properties
+                and not team.allied(t.team)):
+                self.choices.append("Capture")
 
             self.grid.move_unit((ox,oy),(x,y))
             self.choices += ["Wait","Cancel"]
@@ -449,6 +480,30 @@ class Game(object):
 
             self.action.append(opt)
             return self.transition("attacking")
+
+        if opt == "Capture":
+            self.choices = []
+
+            x,y = self.action[-1]
+            t = self.grid.tile_at(x,y)
+            unit = t.unit
+            unit.ready = False
+
+            # Capturing.
+            start_hp = t.hp
+            t.hp -= int(unit.hp*.5)
+            if t.hp <= 0:
+                t.hp = 0
+            col = t.team.color if t.team else "w"
+            a = widgets.HPAlert(6,1,col,start_hp,t.hp,0)
+            a.time = (start_hp - t.hp) + 50
+            self.alerts += [(a,x+2,y+2)]
+            if t.hp == 0:
+                t.hp = 100
+                t.team = unit.team
+            
+            self.action.append(opt)
+            return self.commit()
 
         # Wait.
         if opt == "Wait":

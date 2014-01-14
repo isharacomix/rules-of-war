@@ -75,6 +75,13 @@ class Grid(object):
                     return u
                 this.unit = _process_units(c["unit"])
                 
+    # This returns all of the tiles.
+    def all_tiles(self):
+        report = []
+        for r in self.grid:
+            report += r
+        return report
+
     # Get the tile at x,y. Returns None if out of range.
     def tile_at(self, x, y):
         if (x < 0 or x >= self.w or y < 0 or y >= self.h):
