@@ -34,7 +34,7 @@ class Shell(object):
                     cell["name"] = "Grass"
                 gdict["cells"].append(cell)
         unit1 = {}
-        unit1["name"] = "Infantry"
+        unit1["name"] = "Artillery"
         unit1["team"] = 0
         unit2 = {}
         unit2["name"] = "Infantry"
@@ -49,12 +49,20 @@ class Shell(object):
         rdict["rules"] = {}
         rdict["rules"]["units"] = {}
         rdict["rules"]["units"]["Infantry"] = {}
+        rdict["rules"]["units"]["Artillery"] = {}
         irules = rdict["rules"]["units"]["Infantry"]
         irules["properties"] = ["capture"]
         irules["icon"] = "i"
         irules["move"] = 3
-        irules["damage"] = { "Infantry":30 }
+        irules["damage"] = { "Infantry":30, "Artillery":10 }
         irules["terrain"] = { "Grass":1, "Mountains":2, "City":1}
+        arules = rdict["rules"]["units"]["Artillery"]
+        arules["properties"] = ["indirect"]
+        arules["icon"] = "L"
+        arules["move"] = 5
+        arules["range"] = [2,3]
+        arules["damage"] = { "Infantry":70, "Artillery":70 }
+        arules["terrain"] = { "Grass":1, "City":1}
         rdict["rules"]["terrain"] = {"Grass":{},"Mountains":{},"Ocean":{},
                                      "City":{}}
         rdict["rules"]["terrain"]["Grass"]["icon"] = "."
@@ -73,7 +81,9 @@ class Shell(object):
         rdict["rules"]["terrain"]["City"]["color"] = "w"
         rdict["rules"]["terrain"]["City"]["defense"] = 3
         rdict["rules"]["terrain"]["City"]["cash"] = 1000
-        rdict["rules"]["terrain"]["City"]["properties"] = ["capture"]
+        rdict["rules"]["terrain"]["City"]["properties"] = ["capture","build"]
+        rdict["rules"]["terrain"]["City"]["build"] = {"Infantry":1000,
+                                                      "Artillery":5000}
         
         rdict['history'].append([[(0,4),(1,4),"Wait"]])
 
@@ -105,7 +115,7 @@ class Shell(object):
         try:
             c = -1
             gfx.clear()
-            while c != "q":
+            while c != "q" and not self.g.world.winners:
                 self.display()
                 c = gfx.get_input()
                 if self.menu:

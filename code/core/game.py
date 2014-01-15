@@ -22,6 +22,7 @@ class Cell(grid.Cell):
         self.properties = list(rules.get("properties",[]))
         self.hp = 100
         self.cash = rules.get("cash",0)
+        self.build = dict(rules.get("build",{}))
 
 # Custom Team subclass. Contains information such as resources.
 class Team(grid.Team):
@@ -41,6 +42,7 @@ class Unit(grid.Unit):
         self.damage = dict(rules["damage"])
         self.properties = list(rules.get("properties",[]))
         self.terrain = dict(rules["terrain"])
+        self.rng = tuple(rules.get("range",[1,1]))
 
     # Simulate an attack from this unit on a target including unit
     # bonuses and terrain effects.
@@ -51,6 +53,10 @@ class Unit(grid.Unit):
             cover = 1.0 - (.1*terrain.defense)
             return int(base*.01*hp*cover)
         return None
+
+    # This returns False if out of range and true if in range.
+    def in_range(self, dist):
+        return (dist >= self.rng[0] and dist <= self.rng[1])
 
     # This drawing method overrides the default method by handling
     # animations for when this unit is low on resources such as HP,
@@ -102,6 +108,7 @@ class Game(object):
         self.action = []
         self.state = None
         self.choices = []
+        self.winners = None
 
         # other
         self.alerts = []
@@ -177,6 +184,7 @@ class Game(object):
         dx,dy = def_pos
         atk_unit = self.grid.unit_at(ax,ay)
         def_unit = self.grid.unit_at(dx,dy)
+        dist = self.grid.dist((ax,ay),(dx,dy))
 
         if not atk_unit: raise Exception("Attack square is empty.")
         if not def_unit: raise Exception("Defend square is empty.")
@@ -185,7 +193,13 @@ class Game(object):
         a_terrain = self.grid.tile_at(ax,ay)
         d_terrain = self.grid.tile_at(dx,dy)
         def_unit.hp -= atk_unit.simulate(def_unit.name, d_terrain)
-        if def_unit.hp > 0:
+
+        counter = True
+        if def_unit.hp <= 0: counter = False
+        if "indirect" in def_unit.properties: counter = False
+        if not def_unit.in_range(dist): counter = False
+
+        if counter:
             atk_unit.hp -= def_unit.simulate(atk_unit.name, a_terrain)
 
         # Remove destroyed units from grid and prevent HP from falling into
@@ -198,6 +212,16 @@ class Game(object):
             def_unit.hp = 0
             d_terrain.hp = 100
             self.grid.remove_unit(dx,dy)
+
+        # Check and see if the last unit died.
+        a_alive = False
+        d_alive = False
+        for (tx,ty) in self.grid.all_tiles_xy():
+            u = self.grid.unit_at(tx,ty)
+            if u and u.team is atk_unit.team: a_alive = True
+            if u and u.team is def_unit.team: d_alive = True 
+        if not a_alive: self.defeated(atk_unit.team)
+        if not d_alive: self.defeated(def_unit.team)
 
     # 
     def pump_info(self, x, y):
@@ -215,7 +239,10 @@ class Game(object):
             if t.cash >= 1000000:
                 money = "$RICH"
             space = " "*(14-len(t.name[:8])-len(money))
-            info1.append( ("%s%s%s"%(t.name[:8], space, money), t.color) )
+            col = t.color
+            if not t.active:
+                col = "x!"
+            info1.append( ("%s%s%s"%(t.name[:8], space, money), col) )
 
         # If attack is in the action, we need to get the estimated
         # damage to show the player.
@@ -227,6 +254,7 @@ class Game(object):
             if atk_unit and def_unit:
                 a_terrain = self.grid.tile_at(ax,ay)
                 d_terrain = self.grid.tile_at(x,y)
+                dist = self.grid.dist((ax,ay),(x,y))
                 est = atk_unit.simulate(def_unit.name,d_terrain)
                 dmg1 = "-%d%%"%est
                 if est > def_unit.hp:
@@ -234,22 +262,28 @@ class Game(object):
                 dmg2 = "-%d%%"%(def_unit.simulate(atk_unit.name,a_terrain,
                                                   atk_unit.hp-est))
 
+                counter = True
+                if "indirect" in def_unit.properties: counter = False
+                if not def_unit.in_range(dist): counter = False
+                if not counter: dmg2 = "-0%"
+
         # Info 2 is for the intel on the hovering tile.
         info2 = []
         t = self.grid.tile_at(x,y)
         tcol = "w"
-        if t.team:
-            tcol = t.team.color
-        info2 += [ (t.name,tcol),
-                   ("DEF +%d"%t.defense,tcol)]
-        u = t.unit
-        if u:
-            ucol = u.team.color
-            if t.hp < 100:
-                info2 += [("Capturing: %d%%"%t.hp,ucol)]
-            info2 += [ (" ",""),
-                       (u.name,ucol+"!"),
-                       ("HP %d%% %s"%(u.hp,dmg1),ucol) ]
+        if t:
+            if t.team:
+                tcol = t.team.color
+            info2 += [ (t.name,tcol),
+                       ("DEF +%d"%t.defense,tcol)]
+            u = t.unit
+            if u:
+                ucol = u.team.color
+                if t.hp < 100:
+                    info2 += [("Capturing: %d%%"%t.hp,ucol)]
+                info2 += [ (" ",""),
+                           (u.name,ucol+"!"),
+                           ("HP %d%% %s"%(u.hp,dmg1),ucol) ]
             
         
 
@@ -260,7 +294,7 @@ class Game(object):
             if len(self.action) > 1:
                 x,y = self.action[1]
             t = self.grid.tile_at(x,y)
-            u = t.unit
+            u = self.grid.unit_at(x,y)
             if u:
                 col = u.team.color
                 info3 = [(u.name,col+"!"),
@@ -325,6 +359,16 @@ class Game(object):
 
         self.start = False
 
+    # Mark the team as defeated. This destroys all of their units, sets their
+    # funds to zero, and marks them as inactive, unable to take future turns.
+    # Properties are still left intact - capturing the enemy HQ will reward
+    # you by giving you all of the properties belonging to the team.
+    def defeated(self, team):
+        team.active = False
+        for (tx,ty) in self.grid.all_tiles_xy():
+            u = self.grid.unit_at(tx,ty)
+            if u and u.team == team:
+                self.grid.remove_unit(tx,ty)
 
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
@@ -341,6 +385,19 @@ class Game(object):
         self.state = None
         self.choices = []
         self.checkpoint = copy.deepcopy(self.grid)
+
+        # Finally, figure out if we've won. If we have, then put the map in
+        # "finished" mode and allow the player to leave. The game is only
+        # won when the final player ends their turn.
+        winner = True
+        for at in [t for t in self.grid.teams if t.active]:
+            for ot in [t for t in self.grid.teams if t.active]:
+                if not at.allied(ot):
+                    winner = False
+        if winner:
+            self.winners = [t for t in self.grid.teams if t.active]
+
+
         return self.transition(None)
 
     # This sets the new state and returns the appropriate code
@@ -352,6 +409,7 @@ class Game(object):
         elif self.state == "moving"   : return CTRL_COORD
         elif self.state == "action"   : return CTRL_MENU
         elif self.state == "attacking": return CTRL_COORD
+        elif self.state == "building" : return CTRL_MENU
 
     # This processes input of two types: coordinates and strings.
     # A string is the input from a menu, such as "attack" or "wait".
@@ -367,6 +425,7 @@ class Game(object):
         elif self.state == "moving"   : return self.process_moving(c)
         elif self.state == "action"   : return self.process_action(c)
         elif self.state == "attacking": return self.process_attacking(c)
+        elif self.state == "building" : return self.process_building(c)
 
     # State    : None (expected input, tuple)
     # Expected : Tuple (unit or friendly factory)
@@ -376,24 +435,32 @@ class Game(object):
         if type(coord) is not tuple:
             raise Exception("Expected tuple!")
         x,y = coord
+        t = self.grid.tile_at(x,y)
         u = self.grid.unit_at(x,y)
         team = self.grid.current_team()
 
         # If no unit, check for terrain
-        if not u:
-            self.state = "main menu"
-            self.choices = ["Back","End Turn","Undo","Start Over"]
-            return self.transition("main menu")
+        self.action.append((x,y))
+        if t and not u and "build" in t.properties and t.team is team:
+            self.choices = []
+            for b in t.build:
+                p = t.build[b]
+                if p <= team.cash:
+                    self.choices.append("%s $%d"%(b,p))
+            self.choices.append("Cancel")
+            return self.transition("building")
 
         # Even if the unit isn't ours (or isn't ready) we still enter the
         # "move" state so that we can see its movement range. Actually
         # moving the unit will be stopped at the process_moving step.
         if u:
-            self.action.append((x,y))
             self.choices = self.get_move_range(x,y)
             return self.transition("moving")
 
-        raise Exception("Shouldn't get here.")
+        # Whatever else happens, main menu.
+        self.choices = ["Back","End Turn","Surrender","Undo","Start Over"]
+        return self.transition("main menu")
+
 
     # State    : Moving (expected input, tuple)
     # Expected : Tuple in range
@@ -419,7 +486,7 @@ class Game(object):
 
             # Determine if a target is in range.
             attackable = False
-            for px,py in self.grid.get_range((x,y),1):
+            for px,py in self.grid.get_range((x,y),u.rng[0],u.rng[1]):
                 a = self.grid.unit_at(px,py)
                 if a and not a.allied(u):
                     attackable = True
@@ -449,10 +516,11 @@ class Game(object):
 
         # Leave the menu.
         if opt == "Back":
-            return self.transition(None)
+            return self.start_over()
         
         # End my turn.
         if opt == "End Turn":
+            self.action = []
             return self.end_turn()
 
         if opt == "Undo":
@@ -460,6 +528,32 @@ class Game(object):
 
         if opt == "Start Over":
             return self.undo(True)
+
+        if opt == "Surrender":
+            self.defeated(self.grid.current_team())
+            self.action.append(opt)
+            return self.commit()
+
+
+    # State: main menu (expected, menu option)
+    def process_building(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+
+        # Leave the menu.
+        if opt == "Cancel":
+            return self.start_over()
+        
+        else:
+            x,y = self.action[0]
+            team = self.grid.current_team()
+            unit, cost = opt.rsplit(None,1)
+            u = self.make_unit({"name":unit})
+            self.grid.add_unit(u, team, x, y)
+            team.cash -= int(cost[1:])
+            u.ready = False
+            self.action.append(opt)
+            return self.commit()
 
     # 
     def process_action(self, opt):
@@ -473,7 +567,7 @@ class Game(object):
             u = self.grid.unit_at(x,y)
 
             # Get possible targets.
-            for px,py in self.grid.get_range((x,y),1):
+            for px,py in self.grid.get_range((x,y),u.rng[0],u.rng[1]):
                 a = self.grid.unit_at(px,py)
                 if a and not a.allied(u):
                     self.choices.append((px,py))
@@ -528,7 +622,6 @@ class Game(object):
             a, d = self.grid.unit_at(ox,oy), self.grid.unit_at(x,y)
             
             start_hp = d.hp, a.hp
-            #self.action_attack((ox,oy),(x,y))
             self.action_attack((ox,oy),(x,y))
             end_hp = d.hp, a.hp
 

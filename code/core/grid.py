@@ -82,6 +82,13 @@ class Grid(object):
             report += r
         return report
 
+    def all_tiles_xy(self):
+        report = []
+        for x in range(self.w):
+            for y in range(self.h):
+                report.append((x,y))
+        return report
+
     # Get the tile at x,y. Returns None if out of range.
     def tile_at(self, x, y):
         if (x < 0 or x >= self.w or y < 0 or y >= self.h):
@@ -158,13 +165,19 @@ class Grid(object):
     def current_team(self):
         return self.teams[self.turn]
 
-    # End the turn and proceed to the next team.
+    # End the turn and proceed to the next team, so long as there is
+    # at least one active team left.
     def end_turn(self):
-        current_team = self.teams[self.turn]
-        self.turn += 1
-        if self.turn >= len(self.teams):
-            self.turn = 0
+        if len([t for t in self.teams if t.active]) == 0:
             self.day += 1
+        else:
+            flag = True
+            while flag or not self.teams[self.turn].active:
+                flag = False
+                self.turn += 1
+                if self.turn >= len(self.teams):
+                    self.turn = 0
+                    self.day += 1
         
 
 # A grid is made up of Cells. The cells all have properties that make up
@@ -203,7 +216,7 @@ class Unit(object):
 
     # Returns true if the two units (or cells) are allied.
     def allied(self, other):
-        return other.team == self.team or other.team in self.team.allies
+        return other.team is self.team or other.team in self.team.allies
 
 
 # The game is played by teams. Each team commands an army of units and
@@ -219,7 +232,7 @@ class Team(object):
 
     # Returns true if the two teams are allied.
     def allied(self, team):
-        return team == self or team in self.allies
+        return team is self or team in self.allies
 
 
 # The controller of the grid. It takes a rules object and passes
