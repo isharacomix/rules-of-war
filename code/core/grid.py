@@ -111,10 +111,10 @@ class Grid(object):
         x,y = center
         for r in range(start,end+1):
             for i in range(r):
-                report.append((x+i,y+(r-i)))
-                report.append((x+i,y-(r-i)))
-                report.append((x+(r-i),y+i))
-                report.append((x-(r-i),y+i))
+                report.append((x+(r-i),y+i    ))
+                report.append((x-i    ,y+(r-i)))
+                report.append((x-(r-i),y-i    ))
+                report.append((x+i    ,y-(r-i)))
         return report
 
     # Return distance (zero norm) between two points.

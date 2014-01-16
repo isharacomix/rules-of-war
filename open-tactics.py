@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"code")
 
 from core import shell
 
-S = shell.Shell()
+S = shell.Shell(*sys.argv)
 S.run()
 
 

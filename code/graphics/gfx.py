@@ -20,6 +20,15 @@ try:
 except: pass
 
 
+# Try to import testing
+testing_available = False
+try:
+    from . import gfx_testing
+    testing_available = True
+except: pass
+
+
+
 # API that needs to be implemented by subsystems.
 #   start()
 #   stop()
@@ -45,6 +54,7 @@ def start(mode=None):
     
     if mode == "ascii" and ascii_available: gfx = gfx_ascii
     elif mode == "sdl" and sdl_available: gfx = gfx_sdl
+    elif mode == "testing" and testing_available: gfx = gfx_testing
     old_mode = mode
 
     if gfx:

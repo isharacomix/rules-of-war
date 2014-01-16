@@ -8,13 +8,22 @@ from graphics import gfx, draw
 from . import game, grid, widgets
 
 import sys
+import os
 import traceback
 import random
+import unittest
 
 # A Shell represents a single instance of a game, including its maps,
 # data, and everything else.
 class Shell(object):
-    def __init__(self):
+    def __init__(self, *args):
+
+
+        self.mode = "play"
+        if "--test" in args:
+            self.mode = "test"
+
+        # IN THE FUTURE ALL OF THIS WILL NOT EXIST
         rdict = {}
         gdict = {}
         gdict["name"] = "Hello World"
@@ -86,6 +95,7 @@ class Shell(object):
                                                       "Artillery":5000}
         
         rdict['history'].append([[(0,4),(1,4),"Wait"]])
+        ## IN THE FUTURE ALL OF THIS WILL NOT EXIST
 
         # The most basic item is the rules.
         r = game.Game(rdict)
@@ -109,6 +119,14 @@ class Shell(object):
     # world until we are told we don't need to anymore. If an error occurs, we
     # turn off graphics, print the traceback, and kill the program.
     def run(self):
+        if self.mode == "test":
+            gfx.start("testing")
+            start = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                 "..","tests")
+            suite = unittest.TestLoader().discover(start)
+            unittest.TextTestRunner().run(suite)
+            return
+
         gfx.start("ascii")
 
         
