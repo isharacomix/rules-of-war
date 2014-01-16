@@ -351,7 +351,7 @@ class Game(object):
 
         # Make the turn-start alert.
         m1 = "%s: Day %d"%(self.grid.name, self.grid.day)
-        m2 = "%s Advance"%t.name
+        m2 = "%s - move out!"%t.name
         w = max(len(m1),len(m2))+1
         a = widgets.Alert(w,2,m1+"\n"+m2,t.color)
         a.time = 50
@@ -369,6 +369,11 @@ class Game(object):
             u = self.grid.unit_at(tx,ty)
             if u and u.team == team:
                 self.grid.remove_unit(tx,ty)
+
+        m = "%s has been defeated!"%(team.name)
+        a = widgets.Alert(len(m)+1,1,m,team.color)
+        a.time = 50
+        self.alerts.append((a,10,5))
 
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
