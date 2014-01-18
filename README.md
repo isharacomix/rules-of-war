@@ -14,9 +14,9 @@ guiding philosophy for this game is
 I'm theoretically developing this game for [One Game a Month][1gam], and I'm
 livestreaming development nightly from 10-midnight EST on [my website][].
 
-If you think this project is cool, you could show your appreciate by tipping
-some Dogecoin to [DAvv9fM9HdxbUsfJa8W6KpmxhXQx6Mmxjg][doge]! Click the link
-to see how much this project has received!
+If you think this project is cool, consider tipping some Dogecoin to
+[DAvv9fM9HdxbUsfJa8W6KpmxhXQx6Mmxjg][doge] - click the link to see how much
+this project has received to date!
 
 
 
