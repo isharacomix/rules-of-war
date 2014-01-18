@@ -204,7 +204,8 @@ class Game(object):
         # Use the naive flood-fill algorithm to get neighboring
         # tiles. TODO: handle allied units
         report = []
-        def _floodfill((a,b),r,top=False):
+        def _floodfill(pos,r,top=False):
+            a,b = pos
             t = self.grid.tile_at(a,b)
             if t and (not t.unit or t.unit.allied(unit)):
                 if not top:
