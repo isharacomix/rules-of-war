@@ -63,12 +63,14 @@ class Shell(object):
         irules["properties"] = ["capture"]
         irules["icon"] = "i"
         irules["move"] = 3
+        irules["description"] = "Infantry are the cheapest unit and capture."
         irules["damage"] = { "Infantry":30, "Artillery":10 }
         irules["terrain"] = { "Grass":1, "Mountains":2, "City":1}
         arules = rdict["rules"]["units"]["Artillery"]
         arules["properties"] = ["indirect"]
         arules["icon"] = "L"
         arules["move"] = 5
+        arules["description"] = "Artillery have range but are defenseless."
         arules["range"] = [2,3]
         arules["damage"] = { "Infantry":70, "Artillery":70 }
         arules["terrain"] = { "Grass":1, "City":1}

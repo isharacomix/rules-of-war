@@ -23,6 +23,27 @@ class Cell(grid.Cell):
         self.hp = 100
         self.cash = rules.get("cash",0)
         self.build = dict(rules.get("build",{}))
+        self.description = rules.get("description","")
+
+    # Create a rulebook section for this terrain.
+    def rulebook(self):
+        report = []
+        report.append(self.name+"\n"+("-"*len(self.name)))
+        if self.description:
+            report.append(self.description+"\n ")
+        report.append("Icon on map: %s"%self.icon)
+        report.append("Defensive cover: %d"%self.defense)
+
+        if "capture" in self.properties:
+            report.append("Can be captured")
+            report.append("Produces $%d per turn"%self.cash)
+        if "build" in self.properties:
+            report.append("Can produce units:")
+            for b in self.build:
+                report.append("    %s costs $%d"%(b,self.build[b]))
+
+        return report
+
 
 # Custom Team subclass. Contains information such as resources.
 class Team(grid.Team):
@@ -43,6 +64,30 @@ class Unit(grid.Unit):
         self.properties = list(rules.get("properties",[]))
         self.terrain = dict(rules["terrain"])
         self.rng = tuple(rules.get("range",[1,1]))
+        self.description = rules.get("description","")
+
+    # Create a rulebook section for this unit.
+    def rulebook(self):
+        report = []
+        report.append(self.name+"\n"+("-"*len(self.name)))
+        if self.description:
+            report.append(self.description+"\n ")
+        report.append("Icon on map: %s"%self.icon)
+        report.append("Movement Range: %d"%self.move)
+        for t in self.terrain:
+            report.append("    %d over %s"%(self.terrain[t],t))
+        if "indirect" in self.properties:
+            report.append("Indirect attack unit")
+        if self.rng[0] != self.rng[1]:
+            report.append("Firing Range: %d-%d"%self.rng)
+        else:
+            report.append("Firing Range: %d"%self.rng[0])
+        for u in self.damage:
+            report.append("    vs %s -%d%%"%(u, self.damage[u]))
+        if "capture" in self.properties:
+            report.append("Can capture properties")
+
+        return report
 
     # Simulate an attack from this unit on a target including unit
     # bonuses and terrain effects.
@@ -648,3 +693,36 @@ class Game(object):
 
         else:
             return self.start_over()
+
+
+    # The rulebook has three pages. An overview, a page for units, and
+    # a page for terrain.
+    def make_rulebook(self):
+        overview = [("Overview\n========","w!")]
+        overview.append(" ")
+        overview.append("One day I'll put the rules here.")
+
+        
+        quick = [("Quick Reference\n===============","w!")]
+
+        # The third section has all of the units, listed in order.
+        # We create temporary unit objects that are responsible for
+        # writing their own sections.
+        units = [("Unit Intel\n==========","w!")]
+        quick.append(" ")
+        quick.append("Units\n----------------------")
+        for uni in self.data["rules"]["units"]:
+            U = self.make_unit({"name":uni})
+            units += [" "]+U.rulebook()+[" "]
+            quick.append("%20s %s"%(U.name, U.icon))
+
+        # The fourth part is just like the second, except for terrain.
+        terrain = [("Terrain Intel\n=============","w!")]
+        quick.append(" ")
+        quick.append("Terrain\n----------------------")
+        for ter in self.data["rules"]["terrain"]:
+            T = self.make_cell({"name":ter})
+            terrain += [" "]+T.rulebook()+[" "]
+            quick.append("%20s %s"%(T.name, T.icon))
+
+        return [overview,quick,units,terrain]

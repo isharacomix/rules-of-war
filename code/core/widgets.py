@@ -117,22 +117,24 @@ class Buffer(object):
         self.where = 0
         self.text = []
 
-    # This adds a string 's' to the buffer and rescrolls to the
+    # This adds a string 'msg' to the buffer and rescrolls to the
     # end. Word-wraps the text if necessary.
-    def write(self, s, col="w"):
+    def write(self, msg, col="w"):
         current = ""
         report = []
-        for c in s:
-            current += c
-            if len(current) >= self.w:
-                if " " in current.rstrip():
-                    old,current = current.rstrip().rsplit(None,1)
-                    report.append((old,col))
-                else:
-                    report.append((current,col))
-                    current = ""
-        if current:
-            report.append((current,col))
+        for s in msg.split("\n"):
+            for c in s:
+                current += c
+                if len(current) >= self.w:
+                    if " " in current.rstrip():
+                        old,current = current.rstrip().rsplit(None,1)
+                        report.append((old,col))
+                    else:
+                        report.append((current,col))
+                        current = ""
+            if current:
+                report.append((current,col))
+                current = ""
         report.reverse()
         self.text = report + self.text
         self.where = 0
@@ -146,9 +148,10 @@ class Buffer(object):
     # numbers scroll to older ones. "None" will scroll to the
     # end.
     def scroll(self, where):
+        if len(self.text) < self.h:
+            return
         self.where -= where
-        if self.where < 0:
-            self.where = 0
+        self.where = min(max(self.where,0),len(self.text)-self.h)
 
     # The buffer does usually handle input, but when it does,
     # up and down scroll it. This handle-input never returns
@@ -242,3 +245,44 @@ class Camera(object):
                         tile.unit.draw(tx,ty,cur)
                     else:
                         tile.draw(tx,ty,cur)
+
+
+# Rulebooks are really big text buffers designed for providing information
+# dumps to the player. Rulebooks are made up of pages, and the pages can be
+# changed using left/right.
+class Rulebook(object):
+    def __init__(self, w, h, pages, start=0):
+        self.w = w
+        self.h = h
+        self.buffers = []
+        self.page = start
+        for text in pages:
+            b = Buffer(w,h-2)
+            for line in text:
+                col = ""
+                if type(line) == tuple:
+                    line,col = line
+                b.write(line,col)
+            self.buffers.append(b)
+            b.scroll(-10000)
+
+    # The buffer does usually handle input, but when it does,
+    # up and down scroll it. This handle-input never returns
+    # anything other than None.
+    def handle_input(self, c):
+        if c == "up": self.buffers[self.page].scroll(-1)
+        if c == "down": self.buffers[self.page].scroll(1)
+        if c == "left": self.page = (self.page-1)%len(self.buffers)
+        if c == "right": self.page = (self.page+1)%len(self.buffers)
+        return None
+
+    # This draws the buffer with its current width and height such
+    # that it starts with the top-left x,y of the terminal. You can
+    # override the colors (gray out) by providing a col parameter.
+    def draw(self, x, y, col=""):
+        self.buffers[self.page].draw(x,y,col)
+        pageno = "Page %d/%d"%(self.page+1,len(self.buffers))
+        draw.border(x,y+self.h-1,self.w,1,"--||+")
+        draw.fill(x,y+self.h-1,self.w,1)
+        draw.string(x,y+self.h-1,pageno,col+"?")
+

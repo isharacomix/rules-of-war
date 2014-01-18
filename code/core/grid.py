@@ -252,11 +252,22 @@ class Controller(object):
 
         self.alerts = []
         self.menu = None
+        self.rulebook = None
 
     # This function handles input passed from gfx.get_input.
     def handle_input(self, c):
         cx,cy = self.cam.cursor
         r = None
+
+        #
+        if c == "?":
+            if self.rulebook:
+                self.rulebook = None
+            else:
+                text = self.world.make_rulebook()
+                self.rulebook = widgets.Rulebook(self.w,self.h,text)
+        if self.rulebook:
+            q = self.rulebook.handle_input(c)
 
         # If we have a menu, it capture the input. Otherwise, the camera
         # does.
@@ -296,6 +307,10 @@ class Controller(object):
     # x,y and w,h of the viewport in the terminal, and the cx,cy of the
     # top-left of the map (including outside of the map).
     def draw(self, x, y, col=None):
+        if self.rulebook:
+            self.rulebook.draw(x,y)
+            return
+
         self.cam.draw(x,y)
         self.buff1.draw(x+(self.w-15),y)
         self.buff2.draw(x+(self.w-15),y+8)
