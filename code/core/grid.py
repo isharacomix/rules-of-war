@@ -282,12 +282,12 @@ class Controller(object):
             else:
                 text = self.world.make_rulebook()
                 self.rulebook = widgets.Rulebook(self.w,self.h,text)
-        if self.rulebook:
-            q = self.rulebook.handle_input(c)
 
         # If we have a menu, it capture the input. Otherwise, the camera
         # does.
-        if self.menu:
+        if self.rulebook:
+            q = self.rulebook.handle_input(c)
+        elif self.menu:
             q = self.menu[0].handle_input(c)
             if q:
                 r = self.world.process(q)
@@ -345,3 +345,4 @@ class Controller(object):
             m.time -= 1
             m.draw(mx+x-cx, my+y-cy)
         self.alerts = [a for a in self.alerts if a[0].time > 0]
+        
