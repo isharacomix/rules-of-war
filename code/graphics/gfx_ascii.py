@@ -100,6 +100,7 @@ def get_input():
 # In curses, refresh just controls the framerate.
 def refresh():
     if _screen:
+        _screen.refresh()
         curses.napms(20)
 
 # Clear the screen. This uses Curses' optimized erase routine, so it's not

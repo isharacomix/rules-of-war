@@ -20,8 +20,11 @@ class Shell(object):
 
 
         self.mode = "play"
+        self.graphics = "ascii"
         if "--test" in args:
             self.mode = "test"
+        if "--sdl" in args:
+            self.graphics = "sdl"
 
         # IN THE FUTURE ALL OF THIS WILL NOT EXIST
         rdict = {}
@@ -97,7 +100,7 @@ class Shell(object):
 
         # The most basic item is the rules.
         r = rules.Rules(rdict,True)
-        self.g = grid.Controller(76,20,r)
+        self.g = grid.Controller(78,22,r)
 
         self.menu = None
         #self.buff = widgets.Buffer(10,5)
@@ -106,7 +109,7 @@ class Shell(object):
     
     def display(self):
         #gfx.clear()
-        self.g.draw(2,2)
+        self.g.draw(1,1)
         if self.menu:
             self.menu.draw(1,20,"r")
         #self.buff.draw(1,19)
@@ -125,8 +128,11 @@ class Shell(object):
             unittest.TextTestRunner().run(suite)
             return
 
-        gfx.start("ascii")
-
+        try:
+            gfx.start(self.graphics)
+        except:
+            print("Can't run in %d mode."%self.graphics)
+            return
         
         try:
             c = -1

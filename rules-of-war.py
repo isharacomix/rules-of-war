@@ -6,6 +6,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),"code")
 from core import shell
 
 S = shell.Shell(*sys.argv)
+
+#import cProfile
+#cProfile.run("S.run()")
+
 S.run()
 
 

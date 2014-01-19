@@ -13,6 +13,7 @@ if pygame.font is None:
 # changed.
 _screen = None
 _changes = {}
+_fakescreen = {}
 _sw, _sh, _tw, _th = 0,0,0,0
 _clock = None
 
@@ -110,7 +111,7 @@ _keymap ={pygame.K_BACKSPACE: "backspace",
           pygame.K_ESCAPE:    "escape",
           -1:                 None}
 def get_input():
-    global _screen, _keymap
+    global _screen, _keymap, NO_KEY
     if _screen:
         events = pygame.event.get(pygame.KEYDOWN)
         quit = pygame.event.get(pygame.QUIT)
@@ -130,14 +131,16 @@ def get_input():
 # This redraws the screen and handles the framerate. Should be called once
 # per game tick.
 def refresh():
-    global _screen, _changes, _clock, _tw, _th
+    global _screen, _changes, _clock, _tw, _th, _fakescreen
     if _screen:
         _clock.tick(50)
+        
         dirty = []
         
         cleared = False
         if "cleared" in _changes:
             cleared = _changes.pop("cleared")
+            _fakescreen = {}
         for x,y in _changes:
             c,col = _changes[(x,y)]
             target = pygame.Rect(x*_tw,y*_th,_tw,_th)
@@ -152,8 +155,10 @@ def refresh():
                 if e == "?": invert = True
             if invert:
                 fg,bg=bg,fg
-            _screen.blit(_tiles[(c,fg,bg,bold)],target)
-            dirty.append(target)
+            if _fakescreen.get((x,y),None) != _changes[(x,y)]:
+                _screen.blit(_tiles[(c,fg,bg,bold)],target)
+                _fakescreen[(x,y)] = _changes[(x,y)]
+                dirty.append(target)
         if cleared:
             pygame.display.update()
         elif len(dirty) > 0:

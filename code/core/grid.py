@@ -331,6 +331,7 @@ class Controller(object):
         self.buff1.draw(x+(self.w-15),y)
         self.buff2.draw(x+(self.w-15),y+8)
         self.buff3.draw(x+(self.w-15),y+16)
+        draw.fill(x+(self.w-15),y+21,16,self.h-20)
         cx,cy = self.cam.viewport
 
         if self.menu:
