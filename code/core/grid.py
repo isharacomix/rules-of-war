@@ -12,9 +12,7 @@ from . import widgets
 # around, but essentially has no functionality other than changing its
 # configuration. The grid should be initialized with a configuration
 # Dictionary containing the following keys and values.
-#   w: (int) width
-#   h: (int) height
-#   cells: (list) exactly w*h cells
+#   cells: (list) cells with x,y positions
 #   teams: (list) the teams in the map
 #   allies: (list) the teams that are allied in a list of lists of ints
 #   variables: (dictionary) a dictionary of user-defined variables
@@ -22,14 +20,8 @@ from . import widgets
 # Danger: Do not store 'rules' in a variable. Should fall out of scope.
 class Grid(object):
     def __init__(self, data, rules):
-        self.grid = []
         self.name = data["name"]
-        self.w, self.h = data["w"], data["h"]
-        for y in range(self.h):
-            row = []
-            for x in range(self.w):
-                row.append(None)
-            self.grid.append(row)
+        self.grid = {}
         self.teams = []
         self.units = []
         self.variables = data.get("variables",{})
@@ -41,6 +33,8 @@ class Grid(object):
         for t in data["teams"]:
             this = rules.make_team( t )
             this.variables = t.get("variables",{})
+            if not t:
+                this.active = False
             self.teams.append(this)
         for alist in data.get("allies",[]):
             for a in alist:
@@ -60,7 +54,7 @@ class Grid(object):
         # the factory of the rules.
         for c in data["cells"]:
             this = rules.make_cell(c)
-            self.grid[c["y"]][c["x"]] = this
+            self.grid[(c["x"],c["y"])] = this
             this.variables = c.get("variables",{})
             if "team" in c:
                 this.team = self.teams[c["team"]]
@@ -69,31 +63,53 @@ class Grid(object):
                     u = rules.make_unit(unit)
                     u.team = self.teams[unit["team"]]
                     u.variables = unit.get("variables",{})
-                    self.units.append(u)
-                    for u in unit.get("carrying",[]):
-                        u.carrying.append(_process_units(u))
-                    return u
+                    if u.team.active:
+                        self.units.append(u)
+                        for u in unit.get("carrying",[]):
+                            u.carrying.append(_process_units(u))
+                        return u
+                    else:
+                        return None
                 this.unit = _process_units(c["unit"])
+
+    # Export a dictionary of the cells and units in the grid. Usually used
+    # to save a map!
+    def export(self):
+        report = {}
+        report["allies"] = []
+        report["cells"] = []
+        report["teams"] = []
+        report["variables"] = dict(self.variables)
+        for t in self.teams:
+            team = {}
+            team["name"] = t.name
+            team["color"] = t.color
+            team["variables"] = dict(t.variables)
+            report["teams"].append(team)
+        for c in self.grid:
+            cell = {}
+            cell["x"],cell["y"] = c
+            cd = self.grid[c]
+            cell["name"] = cd.name
+            cell["variables"] = dict(cd.variables)
+            if cd.unit:
+                cell["unit"] = {}
+                cell["unit"]["name"] = cd.unit.name
+                cell["unit"]["team"] = self.teams.index(cd.unit.team)
+                cell["unit"]["variables"] = dict(cd.unit.variables)
+            report["cells"].append(cell)
+        return report
                 
     # This returns all of the tiles.
     def all_tiles(self):
-        report = []
-        for r in self.grid:
-            report += r
-        return report
+        return self.grid.values()
 
     def all_tiles_xy(self):
-        report = []
-        for x in range(self.w):
-            for y in range(self.h):
-                report.append((x,y))
-        return report
+        return self.grid.keys()
 
     # Get the tile at x,y. Returns None if out of range.
     def tile_at(self, x, y):
-        if (x < 0 or x >= self.w or y < 0 or y >= self.h):
-            return None
-        return self.grid[y][x]
+        return self.grid.get((x,y),None)
 
     # Get the unit at x,y.
     def unit_at(self, x, y):

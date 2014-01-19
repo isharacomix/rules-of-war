@@ -245,6 +245,8 @@ class Camera(object):
                         tile.unit.draw(tx,ty,cur)
                     else:
                         tile.draw(tx,ty,cur)
+                elif self.cursor == (_x,_y):
+                    draw.char(tx,ty," ",cur)
 
 
 # Rulebooks are really big text buffers designed for providing information

@@ -5,7 +5,7 @@
 
 from graphics import gfx, draw
 
-from . import game, grid, widgets
+from . import rules, grid, widgets
 
 import sys
 import os
@@ -27,17 +27,13 @@ class Shell(object):
         rdict = {}
         gdict = {}
         gdict["name"] = "Hello World"
-        gdict["w"] = 30
-        gdict["h"] = 15
         gdict["cells"] = []
         for x in range(30):
             for y in range(15):
                 cell = {}
                 cell["x"] = x
                 cell["y"] = y
-                if random.randint(0,10)==1:
-                    cell["name"] = "Mountains"
-                elif random.randint(0,10)==2:
+                if random.randint(0,10)==2:
                     cell["name"] = "City"
                 else:
                     cell["name"] = "Grass"
@@ -100,7 +96,7 @@ class Shell(object):
         ## IN THE FUTURE ALL OF THIS WILL NOT EXIST
 
         # The most basic item is the rules.
-        r = game.Game(rdict)
+        r = rules.Rules(rdict,True)
         self.g = grid.Controller(76,20,r)
 
         self.menu = None

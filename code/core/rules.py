@@ -1,4 +1,4 @@
-# A game object handles all of the actual game play elements. The rules
+# A rules object handles all of the actual game play elements. The rules
 # are what give meaning to the pieces in a Grid, and is controlled (usually)
 # by a Controller that provides piecewise input.
 
@@ -126,7 +126,7 @@ class Unit(grid.Unit):
         draw.char(x, y, img, color)
 
 
-# The Game serve two purposes. Firstly, it is a factory that produces
+# The Rules serve two purposes. Firstly, it is a factory that produces
 # new objects according the needs of the game being played. Secondly, they
 # serve as a state machine for performing legal actions and changing the
 # state of the game grid.
@@ -137,10 +137,11 @@ class Unit(grid.Unit):
 #   make_cell
 #   pop_alerts
 #   process
-class Game(object):
-    def __init__(self, data):
+class Rules(object):
+    def __init__(self, data, edit=False):
         # TODO: load the rules definition (types of units and properties)
         self.data = data
+        self.edit = edit
 
         # Create the grid with what's left.
         self.grid = grid.Grid(data["grid"], self)
@@ -151,7 +152,10 @@ class Game(object):
 
         # These are the state variables
         self.action = []
-        self.state = None
+        self.state = "play"
+        if edit:
+            self.state = "edit"
+
         self.choices = []
         self.winners = None
 
@@ -160,19 +164,23 @@ class Game(object):
         self.start = True
 
         # Replay turn history.
-        replay = self.data.pop("history",[])
-        self.data["history"] = []
-        for turn in replay:
-            for action in turn:
-                for step in action:
-                    self.process(step)
-            self.end_turn()
+        if not edit:
+            replay = self.data.pop("history",[])
+            self.data["history"] = []
+            for turn in replay:
+                for action in turn:
+                    for step in action:
+                        self.process(step)
+                self.end_turn()
         self.alerts = []
 
     # Return a JSON string that can be saved to a file. The current
     # turn in progress will be lost.
-    def save(self):
-        return json.dumps(self.data)
+    def save(self, griddata=False):
+        data = dict(self.data)
+        if griddata:
+            data["grid"] = self.grid.export()
+        return json.dumps(data)
 
     # This function produces a Unit object based on the unit code.
     def make_unit(self, data):
@@ -190,6 +198,42 @@ class Game(object):
     def make_team(self, data):
         t = Team(data["name"],data["color"])
         return t
+
+
+    # The rulebook has three pages. An overview, a page for units, and
+    # a page for terrain.
+    def make_rulebook(self):
+        overview = [("Overview\n========","w!")]
+        overview.append(" ")
+        overview.append("One day I'll put the rules here.")
+
+        
+        quick = [("Quick Reference\n===============","w!")]
+
+        # The third section has all of the units, listed in order.
+        # We create temporary unit objects that are responsible for
+        # writing their own sections.
+        units = [("Unit Intel\n==========","w!")]
+        quick.append(" ")
+        quick.append("Units\n----------------------")
+        for uni in self.data["rules"]["units"]:
+            U = self.make_unit({"name":uni})
+            units += [" "]+U.rulebook()+[" "]
+            quick.append("%20s %s"%(U.name, U.icon))
+
+        # The fourth part is just like the second, except for terrain.
+        terrain = [("Terrain Intel\n=============","w!")]
+        quick.append(" ")
+        quick.append("Terrain\n----------------------")
+        for ter in self.data["rules"]["terrain"]:
+            T = self.make_cell({"name":ter})
+            terrain += [" "]+T.rulebook()+[" "]
+            quick.append("%20s %s"%(T.name, T.icon))
+
+        return [overview,quick,units,terrain]
+
+    
+
 
 
     # Get movement range of the unit at x,y. Returns nothing
@@ -271,13 +315,15 @@ class Game(object):
 
     # 
     def pump_info(self, x, y):
-        if self.start:
+        if self.start and not self.edit:
             self.start_turn()
         report = self.alerts
         self.alerts = []
         
         # Info 1 is global team information.
         info1 = [ ("Day %d"%self.grid.day,"w!")]
+        if self.edit:
+            info1 = [("Map Editing","w!")]
         for t in self.grid.teams:
             money = "$%d"%t.cash
             if t.cash >= 10000:
@@ -335,7 +381,7 @@ class Game(object):
 
         # Info 3 is for the unit that is currently selected.
         info3 = []
-        if len(self.action) > 0:
+        if len(self.action) > 0 and not self.edit:
             x,y = self.action[0]
             if len(self.action) > 1:
                 x,y = self.action[1]
@@ -355,7 +401,7 @@ class Game(object):
     # supposed to set its camera's grid to the new one.
     def start_over(self):
         self.action = []
-        self.state = None
+        self.state = "play"
         self.choices = []
         self.grid = copy.deepcopy(self.checkpoint)
         return CTRL_UNDO
@@ -365,10 +411,10 @@ class Game(object):
     def commit(self):
         self.history.append((self.checkpoint,self.action))
         self.action = []
-        self.state = None
+        self.state = "play"
         self.choices = []
         self.checkpoint = copy.deepcopy(self.grid)
-        return self.transition(None)
+        return self.transition("play")
 
     # When we undo, we go back to a previous spot in the history.
     def undo(self, total=False):
@@ -382,7 +428,7 @@ class Game(object):
             self.grid = cp
             self.checkpoint = copy.deepcopy(cp)
         self.action = []
-        self.state = None
+        self.state = "play"
         self.choices = []
         return CTRL_UNDO
 
@@ -392,7 +438,7 @@ class Game(object):
 
         # Give the player their money.
         for tile in self.grid.all_tiles():
-            if tile.team is t:
+            if tile and tile.team is t:
                 t.cash += tile.cash
 
         # Make the turn-start alert.
@@ -415,6 +461,7 @@ class Game(object):
             u = self.grid.unit_at(tx,ty)
             if u and u.team == team:
                 self.grid.remove_unit(tx,ty)
+        self.grid.units = [u for u in self.grid.units if u.team is not team]
 
         m = "%s has been defeated!"%(team.name)
         a = widgets.Alert(len(m)+1,1,m,team.color)
@@ -426,14 +473,14 @@ class Game(object):
     def end_turn(self):
         if self.state != None and self.action != []:
             raise Exception("Can't end right now")
+
         self.start = True
-        self.grid.end_turn()
         for u in self.grid.units:
             u.ready = True
         self.data["history"].append([acts for (cp,acts) in self.history])
+        self.grid.end_turn()
         self.history = []
         self.action = []
-        self.state = None
         self.choices = []
         self.checkpoint = copy.deepcopy(self.grid)
 
@@ -447,20 +494,30 @@ class Game(object):
                     winner = False
         if winner:
             self.winners = [t for t in self.grid.teams if t.active]
+            #self.state = "over"
 
-
-        return self.transition(None)
+        return self.transition("play")
 
     # This sets the new state and returns the appropriate code
     # to the caller for what kind of input should come next.
     def transition(self, new_state):
         self.state = new_state
-        if   self.state == None       : return CTRL_COORD
+        if   self.state == "play"     : return CTRL_COORD
         elif self.state == "main menu": return CTRL_MENU
         elif self.state == "moving"   : return CTRL_COORD
         elif self.state == "action"   : return CTRL_MENU
         elif self.state == "attacking": return CTRL_COORD
         elif self.state == "building" : return CTRL_MENU
+
+        elif self.state == "edit"     : return CTRL_COORD
+        elif self.state == "edit menu": return CTRL_MENU
+        elif self.state == "edit unit": return CTRL_MENU
+        elif self.state == "edit terrain": return CTRL_MENU
+        elif self.state == "unit team": return CTRL_MENU
+        elif self.state == "draw terrain": return CTRL_COORD
+        elif self.state == "terrain team": return CTRL_MENU
+
+        else: raise Exception("No such state.")
 
     # This processes input of two types: coordinates and strings.
     # A string is the input from a menu, such as "attack" or "wait".
@@ -471,18 +528,27 @@ class Game(object):
     #     coord: Tell the controller to give it a coord
     #     undo: Tell the controller to reload the grid
     def process(self, c):
-        if   self.state == None       : return self.process_none(c)
+        if   self.state == "play"     : return self.process_play(c)
         elif self.state == "main menu": return self.process_main_menu(c)
         elif self.state == "moving"   : return self.process_moving(c)
         elif self.state == "action"   : return self.process_action(c)
         elif self.state == "attacking": return self.process_attacking(c)
         elif self.state == "building" : return self.process_building(c)
 
-    # State    : None (expected input, tuple)
+        elif self.state == "edit"     : return self.process_edit(c)
+        elif self.state == "edit menu": return self.process_edit_menu(c)
+        elif self.state == "edit unit": return self.process_edit_unit(c)
+        elif self.state == "edit terrain": return self.process_edit_terrain(c)
+        elif self.state == "unit team": return self.process_unit_team(c)
+        elif self.state == "terrain team": return self.process_terrain_team(c)
+        elif self.state == "draw terrain": return self.process_draw_terrain(c)
+
+
+    # State    : Play (expected input, tuple)
     # Expected : Tuple (unit or friendly factory)
     # Next step: If unit: coordinates of range of unit
     #            If factory: list of possible buildables
-    def process_none(self, coord):
+    def process_play(self, coord):
         if type(coord) is not tuple:
             raise Exception("Expected tuple!")
         x,y = coord
@@ -696,34 +762,158 @@ class Game(object):
             return self.start_over()
 
 
-    # The rulebook has three pages. An overview, a page for units, and
-    # a page for terrain.
-    def make_rulebook(self):
-        overview = [("Overview\n========","w!")]
-        overview.append(" ")
-        overview.append("One day I'll put the rules here.")
+    # This is the root state for the editor. We put the editor states
+    # in the same system as the rules so that we can take advantage of
+    # the "make" constructors.
+    def process_edit(self, coord):
+        if type(coord) is not tuple:
+            raise Exception("Expected tuple!")
+        x,y = coord
+        u = self.grid.unit_at(x,y)
+        self.action = [(x,y)]
+        
+        self.choices = ["Unit...", "Terrain...","Map Settings",
+                        "Save Map","Back"]
+
+        return self.transition("edit menu")
+
+    # 
+    def process_edit_menu(self,opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices = []
+        x,y = self.action[0]
+            
+        if opt == "Unit...":
+            self.choices = ["(None)"]
+            for u in self.data["rules"]["units"]:
+                self.choices.append(u)
+            return self.transition("edit unit")
+        
+        if opt == "Terrain...":
+            self.choices = ["(None)"]
+            for u in self.data["rules"]["terrain"]:
+                self.choices.append(u)
+            return self.transition("edit terrain")
+
+        if opt == "Map Settings":
+            return self.transition("edit")
+
+
+        if opt == "Save Map":
+            x = self.save(True)
+            raise Exception(x)
+            return self.transition("edit")
+
+        if opt == "Back":
+            return self.transition("edit")
+
+    # 
+    def process_edit_unit(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices = []
+        x,y = self.action[0]
+        u = self.grid.unit_at(x,y)
+        self.action.append(opt)
+
+        if opt == "(None)":
+            if u:
+                self.grid.remove_unit(x,y)
+            self.action = []
+            return self.transition("edit")
+
+        # Before moving forward, we need to know the team.
+        self.choices = []
+        for t in self.grid.teams:
+            self.choices.append(t.name)
+        return self.transition("unit team")
+
+    # 
+    def process_unit_team(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices = []
+        x,y = self.action[0]
+        t = self.grid.tile_at(x,y)
+        self.action.append(opt)
+
+        if t:
+            u = self.make_unit({"name": self.action[1]})
+            team = None
+            for q in self.grid.teams:
+                if q.name == opt:
+                    team = q
+            self.grid.add_unit(u, team, x, y)
+
+        return self.transition("edit")
+
+    # Editing terrain is slightly different. After picking the type of
+    # terrain you want, you pick another coordinate, and a box is filled
+    # between the two endpoints.
+    def process_edit_terrain(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices = []
+        x,y = self.action[0]
+        u = self.grid.unit_at(x,y)
+        self.action.append(opt)
+        self.choices = [(x,y)]
+
+        if opt == "(None)":
+            return self.transition("draw terrain")
+
+        t = self.make_cell({"name":opt})
+        if "capture" in t.properties:
+            self.choices = ["(None)"]
+            for t in self.grid.teams:
+                self.choices.append(t.name)
+            return self.transition("terrain team")
+        return self.transition("draw terrain")
+
+    # If the tile in question is capturable, then we need to pick the
+    # team.
+    def process_terrain_team(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices = []
+        x,y = self.action[0]
+        self.action.append(opt)
+        return self.transition("draw terrain")
+
+    # Now, pick the endpoint.
+    def process_draw_terrain(self, coord):
+        if type(coord) is not tuple:
+            raise Exception("Expected tuple!")
+        ex,ey = coord
+        ox,oy = self.action[0]
+
+        if ex < ox:
+            ex,ox = ox,ex
+        if ey < oy:
+            ey,oy = oy,ey
+
+        # Now fill!
+        for x in range(ox,ex+1):
+            for y in range(oy,ey+1):
+                t = self.grid.tile_at(x,y)
+                if self.action[1] == "(None)":
+                    u = self.grid.unit_at(x,y)
+                    if u:
+                        self.grid.remove_unit(x,y)
+                    self.grid.grid.pop((x,y),None)
+                else:
+                    tile = self.make_cell({"name":self.action[1]})
+                    if len(self.action) > 2:
+                        team = None
+                        for q in self.grid.teams:
+                            if q.name == self.action[2]:
+                                team = q
+                        tile.team = team
+                    self.grid.grid[(x,y)] = tile
+
+        self.choices = []
+        return self.transition("edit")
+                        
 
         
-        quick = [("Quick Reference\n===============","w!")]
-
-        # The third section has all of the units, listed in order.
-        # We create temporary unit objects that are responsible for
-        # writing their own sections.
-        units = [("Unit Intel\n==========","w!")]
-        quick.append(" ")
-        quick.append("Units\n----------------------")
-        for uni in self.data["rules"]["units"]:
-            U = self.make_unit({"name":uni})
-            units += [" "]+U.rulebook()+[" "]
-            quick.append("%20s %s"%(U.name, U.icon))
-
-        # The fourth part is just like the second, except for terrain.
-        terrain = [("Terrain Intel\n=============","w!")]
-        quick.append(" ")
-        quick.append("Terrain\n----------------------")
-        for ter in self.data["rules"]["terrain"]:
-            T = self.make_cell({"name":ter})
-            terrain += [" "]+T.rulebook()+[" "]
-            quick.append("%20s %s"%(T.name, T.icon))
-
-        return [overview,quick,units,terrain]
