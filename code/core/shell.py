@@ -30,7 +30,7 @@ class Shell(object):
         # IN THE FUTURE ALL OF THIS WILL NOT EXIST
         qdata = storage.read_data("maps","default.json")
         qdict = json.loads(qdata)
-        r = rules.Rules(qdict)
+        r = rules.Rules(qdict,True)
         self.g = grid.Controller(78,22,r)
 
         self.menu = None

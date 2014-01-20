@@ -316,7 +316,14 @@ class Controller(object):
             if r == "undo":
                 self.cam.grid = self.world.grid
             if r == "string":
-                self.textentry = widgets.Textentry(*self.world.choices),10,10
+                fields = []
+                data = {}
+                types = {}
+                for f in self.world.choices:
+                    fields.append(f)
+                    data[f] = self.world.choices[f]["data"]
+                    types[f] = self.world.choices[f]["type"]
+                self.textentry = widgets.Editor(fields,data,types),10,10
 
         # Get intel from the world's information method.
         cx,cy = self.cam.cursor

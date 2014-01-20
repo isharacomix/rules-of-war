@@ -804,7 +804,7 @@ class Rules(object):
 
 
         if opt == "Save Map":
-            self.choices = ["Map Name", 15]
+            self.choices = {"Map Name": {"data":"","type":"str 15"}}
             return self.transition("save map")
 
         if opt == "Back":
@@ -919,15 +919,18 @@ class Rules(object):
                         
     #
     def process_save_map(self, opt):
-        if len(opt) > self.choices[1]:
-            raise Exception("Too long!")
+        if "Map Name" not in opt:
+            raise Exception("Not there!")
+        newname = opt["Map Name"]
+        if len(newname) > 15:
+            raise Exception("Too long.")
 
         self.choices = []
         if len(opt) != 0:
-            self.grid.name = opt
-            x = self.export(True)
-            opt = opt.replace(" ","_")
-            storage.save(x, "maps","%s.json"%opt)
+            self.grid.name = newname
+            data = self.export(True)
+            newname = newname.replace(" ","_")
+            storage.save(data, "maps","%s.json"%newname)
 
         self.action = []
         return self.transition("edit")

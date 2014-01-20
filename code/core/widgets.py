@@ -85,29 +85,66 @@ class Alert(object):
             w += 1
 
 
-#
-class Textentry(object):
-    def __init__(self, title, w):
+# This is a data editor. A list of fields are provided, and two dictionaries.
+# The first dictionary contains the preset data for each field. The types
+# are what kinds of data go in that field (string, int, boolean).
+class Editor(object):
+    def __init__(self, fields, data, types):
         self.data = ""
-        self.title = title
-        self.w = w
+        self.fields = fields
+        self.data = data
+        self.types = types
+        self.current = 0
+        self.width = 0
+        self.margin = 0
+        for f in self.fields:
+            l1 = len(f)+1
+            l2 = 7
+            if types[f].startswith("str"):
+                l2 = int(types[f].split()[1])+1
+            if l1 > self.margin:
+                self.margin = l1
+            if l2 > self.width:
+                self.width = l2
 
     def handle_input(self, c):
+        edit = self.data[self.fields[self.current]]
+        editt = self.types[self.fields[self.current]]
+
         if c == "enter":
             return self.data
-        elif c == "backspace" and len(self.data) > 0:
-            self.data = self.data[:-1]
-        elif c and len(c) == 1 and len(self.data) < self.w:
-            if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
-                self.data += c
+        elif c == "up":
+            self.current = (self.current-1)%len(self.fields)
+        elif c == "down":
+            self.current = (self.current+1)%len(self.fields)
+        elif c == "backspace" and len(edit) > 0:
+            edit = edit[:-1]
+        elif c and len(c) == 1:
+            if editt == "int":
+                if len(edit) < 6 and c in "0123456789":
+                    edit += c
+            if editt.startswith("str"):
+                maxlen = int(editt.split()[1])
+                if len(edit) < maxlen:
+                    if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
+                        edit += c
+
+        self.data[self.fields[self.current]] = edit
         return None
 
     def draw(self, x, y, col=""):
-        draw.border(x,y,self.w+1, 2,"--||+")
-        draw.fill(x, y, self.w+1, 2)
-        draw.string(x,y,self.title,col)
-        draw.string(x,y+1,self.data,col)
-        draw.char(x+len(self.data),y+1," ",col+"?")
+        w = self.width+self.margin
+        m = self.margin
+        draw.border(x,y, w, len(self.fields),"--||+")
+        draw.fill(x, y, w, len(self.fields))
+        for i in range(len(self.fields)):
+            this = (i == self.current)
+            draw.string(x,y+i,self.fields[i], col+("?" if this else ""))
+            draw.string(x+m,y+i, self.data[self.fields[i]], col)
+            if this:
+                draw.char(x+m+len(self.data[self.fields[i]]),y+i," ",col+"?")
+        
+
 
 # The HPAlert is a special kind of alert that is used when a unit's HP
 # is going down. The Alert starts at a certain HP and decreases until
