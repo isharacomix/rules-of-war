@@ -153,5 +153,5 @@ def draw(x,y,c,col=""):
                     if e == "?": mod |= curses.A_REVERSE
                 mod |= _color(fg,bg)
             
-            _screen.addch(y,x,c,mod)
+            _screen.addch(y,x,str(c),mod)
 

@@ -85,6 +85,30 @@ class Alert(object):
             w += 1
 
 
+#
+class Textentry(object):
+    def __init__(self, title, w):
+        self.data = ""
+        self.title = title
+        self.w = w
+
+    def handle_input(self, c):
+        if c == "enter":
+            return self.data
+        elif c == "backspace" and len(self.data) > 0:
+            self.data = self.data[:-1]
+        elif c and len(c) == 1 and len(self.data) < self.w:
+            if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
+                self.data += c
+        return None
+
+    def draw(self, x, y, col=""):
+        draw.border(x,y,self.w+1, 2,"--||+")
+        draw.fill(x, y, self.w+1, 2)
+        draw.string(x,y,self.title,col)
+        draw.string(x,y+1,self.data,col)
+        draw.char(x+len(self.data),y+1," ",col+"?")
+
 # The HPAlert is a special kind of alert that is used when a unit's HP
 # is going down. The Alert starts at a certain HP and decreases until
 # it reaches end. In order to facilitate animation, you can also put in

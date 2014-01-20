@@ -2,7 +2,7 @@
 # are what give meaning to the pieces in a Grid, and is controlled (usually)
 # by a Controller that provides piecewise input.
 
-from . import grid, widgets
+from . import grid, widgets, storage, log
 from graphics import draw
 
 import copy, json
@@ -12,6 +12,7 @@ import copy, json
 CTRL_COORD = "coord"
 CTRL_MENU = "menu"
 CTRL_UNDO = "undo"
+CTRL_STRING = "string"
 
 
 # Custom Cell subclass. Contains information such as terrain defensive bonus.
@@ -154,6 +155,7 @@ class Rules(object):
         self.action = []
         self.state = "play"
         if edit:
+            self.data["history"] = []
             self.state = "edit"
 
         self.choices = []
@@ -164,23 +166,22 @@ class Rules(object):
         self.start = True
 
         # Replay turn history.
-        if not edit:
-            replay = self.data.pop("history",[])
-            self.data["history"] = []
-            for turn in replay:
-                for action in turn:
-                    for step in action:
-                        self.process(step)
-                self.end_turn()
+        replay = self.data.pop("history",[])
+        self.data["history"] = []
+        for turn in replay:
+            for action in turn:
+                for step in action:
+                    self.process(step)
+            self.end_turn()
         self.alerts = []
 
     # Return a JSON string that can be saved to a file. The current
     # turn in progress will be lost.
-    def save(self, griddata=False):
+    def export(self, griddata=False):
         data = dict(self.data)
         if griddata:
             data["grid"] = self.grid.export()
-        return json.dumps(data)
+        return json.dumps(data, indent=4)
 
     # This function produces a Unit object based on the unit code.
     def make_unit(self, data):
@@ -516,6 +517,7 @@ class Rules(object):
         elif self.state == "unit team": return CTRL_MENU
         elif self.state == "draw terrain": return CTRL_COORD
         elif self.state == "terrain team": return CTRL_MENU
+        elif self.state == "save map": return CTRL_STRING
 
         else: raise Exception("No such state.")
 
@@ -542,6 +544,7 @@ class Rules(object):
         elif self.state == "unit team": return self.process_unit_team(c)
         elif self.state == "terrain team": return self.process_terrain_team(c)
         elif self.state == "draw terrain": return self.process_draw_terrain(c)
+        elif self.state == "save map": return self.process_save_map(c)
 
 
     # State    : Play (expected input, tuple)
@@ -549,7 +552,7 @@ class Rules(object):
     # Next step: If unit: coordinates of range of unit
     #            If factory: list of possible buildables
     def process_play(self, coord):
-        if type(coord) is not tuple:
+        if type(coord) not in (tuple,list):
             raise Exception("Expected tuple!")
         x,y = coord
         t = self.grid.tile_at(x,y)
@@ -584,7 +587,7 @@ class Rules(object):
     # Next step: If in range, move
     #            If out of range, cancel
     def process_moving(self, coord):
-        if type(coord) is not tuple:
+        if type(coord) not in (tuple,list):
             raise Exception("Expected tuple!")
         x,y = coord
         ox,oy = self.action[0]
@@ -729,7 +732,7 @@ class Rules(object):
 
     #
     def process_attacking(self, coord):
-        if type(coord) is not tuple:
+        if type(coord) not in (tuple,list):
             raise Exception("Expected tuple!")
         x,y = coord
 
@@ -766,7 +769,7 @@ class Rules(object):
     # in the same system as the rules so that we can take advantage of
     # the "make" constructors.
     def process_edit(self, coord):
-        if type(coord) is not tuple:
+        if type(coord) not in (tuple,list):
             raise Exception("Expected tuple!")
         x,y = coord
         u = self.grid.unit_at(x,y)
@@ -801,9 +804,8 @@ class Rules(object):
 
 
         if opt == "Save Map":
-            x = self.save(True)
-            raise Exception(x)
-            return self.transition("edit")
+            self.choices = ["Map Name", 15]
+            return self.transition("save map")
 
         if opt == "Back":
             return self.transition("edit")
@@ -883,7 +885,7 @@ class Rules(object):
 
     # Now, pick the endpoint.
     def process_draw_terrain(self, coord):
-        if type(coord) is not tuple:
+        if type(coord) not in (tuple,list):
             raise Exception("Expected tuple!")
         ex,ey = coord
         ox,oy = self.action[0]
@@ -915,5 +917,20 @@ class Rules(object):
         self.choices = []
         return self.transition("edit")
                         
+    #
+    def process_save_map(self, opt):
+        if len(opt) > self.choices[1]:
+            raise Exception("Too long!")
+
+        self.choices = []
+        if len(opt) != 0:
+            self.grid.name = opt
+            x = self.export(True)
+            opt = opt.replace(" ","_")
+            storage.save(x, "maps","%s.json"%opt)
+
+        self.action = []
+        return self.transition("edit")
+
 
         

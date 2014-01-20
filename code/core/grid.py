@@ -4,7 +4,7 @@
 
 from graphics import draw
 
-from . import widgets
+from . import widgets, log
 
 
 # The Grid is a game-agnostic representation of the world's entities. It
@@ -12,6 +12,7 @@ from . import widgets
 # around, but essentially has no functionality other than changing its
 # configuration. The grid should be initialized with a configuration
 # Dictionary containing the following keys and values.
+#   name: the name of the map!
 #   cells: (list) cells with x,y positions
 #   teams: (list) the teams in the map
 #   allies: (list) the teams that are allied in a list of lists of ints
@@ -76,6 +77,7 @@ class Grid(object):
     # to save a map!
     def export(self):
         report = {}
+        report["name"] = self.name
         report["allies"] = []
         report["cells"] = []
         report["teams"] = []
@@ -269,6 +271,7 @@ class Controller(object):
         self.alerts = []
         self.menu = None
         self.rulebook = None
+        self.textentry = None
 
     # This function handles input passed from gfx.get_input.
     def handle_input(self, c):
@@ -287,6 +290,11 @@ class Controller(object):
         # does.
         if self.rulebook:
             q = self.rulebook.handle_input(c)
+        elif self.textentry:
+            q = self.textentry[0].handle_input(c)
+            if q:
+                r = self.world.process(q)
+                self.textentry = None
         elif self.menu:
             q = self.menu[0].handle_input(c)
             if q:
@@ -307,6 +315,8 @@ class Controller(object):
                 self.menu = widgets.Menu(self.world.choices),cx,cy
             if r == "undo":
                 self.cam.grid = self.world.grid
+            if r == "string":
+                self.textentry = widgets.Textentry(*self.world.choices),10,10
 
         # Get intel from the world's information method.
         cx,cy = self.cam.cursor
@@ -337,6 +347,9 @@ class Controller(object):
         if self.menu:
             m,mx,my = self.menu
             m.draw(mx+x-cx+2, my+y-cy)
+        if self.textentry:
+            t,tx,ty = self.textentry
+            t.draw(tx,ty)
 
         # Display all alerts on the screen until their timers
         # expire.
