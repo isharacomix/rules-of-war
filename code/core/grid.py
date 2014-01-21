@@ -26,7 +26,7 @@ class Grid(object):
         self.teams = []
         self.units = []
         self.variables = data.get("variables",{})
-        self.day = 0
+        self.day = 1
         self.turn = 0
 
         # Load the teams first, since cells and units reference them.
@@ -34,8 +34,6 @@ class Grid(object):
         for t in data["teams"]:
             this = rules.make_team( t )
             this.variables = t.get("variables",{})
-            if not t:
-                this.active = False
             self.teams.append(this)
         for alist in data.get("allies",[]):
             for a in alist:
@@ -64,13 +62,10 @@ class Grid(object):
                     u = rules.make_unit(unit)
                     u.team = self.teams[unit["team"]]
                     u.variables = unit.get("variables",{})
-                    if u.team.active:
-                        self.units.append(u)
-                        for u in unit.get("carrying",[]):
-                            u.carrying.append(_process_units(u))
-                        return u
-                    else:
-                        return None
+                    self.units.append(u)
+                    for u in unit.get("carrying",[]):
+                        u.carrying.append(_process_units(u))
+                    return u
                 this.unit = _process_units(c["unit"])
 
     # Export a dictionary of the cells and units in the grid. Usually used
@@ -315,7 +310,7 @@ class Controller(object):
                 self.menu = widgets.Menu(self.world.choices),cx,cy
             if r == "undo":
                 self.cam.grid = self.world.grid
-            if r == "string":
+            if r == "editor":
                 fields = []
                 data = {}
                 types = {}
@@ -323,12 +318,23 @@ class Controller(object):
                     fields.append(f)
                     data[f] = self.world.choices[f]["data"]
                     types[f] = self.world.choices[f]["type"]
-                self.textentry = widgets.Editor(fields,data,types),10,10
+                fields.sort(key=lambda x:
+                            self.world.choices[x].get("ordering",100))
+                self.textentry = widgets.Editor(fields,data,types),cx,cy
 
         # Get intel from the world's information method.
         cx,cy = self.cam.cursor
+        vx,vy = self.cam.viewport
         alerts, i1, i2, i3 = self.world.pump_info(cx,cy)
-        self.alerts += alerts
+        for a,loc in alerts:
+            if loc == "c": x,y = (vx+(self.cam.w//2)-(a.w//2),
+                                  vy+(self.cam.h//2)-(a.h//2))
+            elif loc == "tl": x,y = cx-a.w-1,cy-a.h-1
+            elif loc == "tr": x,y = cx+2,cy-a.h-1
+            elif loc == "bl": x,y = cx-a.w-1,cy+2
+            elif loc == "br": x,y = cx+2,cy+2
+
+            self.alerts.append((a,x,y))
         for (info,buff) in ((i1,self.buff1),(i2,self.buff2),(i3,self.buff3)):
             if info is not None:
                 buff.clear()
@@ -351,18 +357,22 @@ class Controller(object):
         draw.fill(x+(self.w-15),y+21,16,self.h-20)
         cx,cy = self.cam.viewport
 
-        if self.menu:
-            m,mx,my = self.menu
-            m.draw(mx+x-cx+2, my+y-cy)
-        if self.textentry:
-            t,tx,ty = self.textentry
-            t.draw(tx,ty)
+        # TODO, if it looks like the menu is going to run off any of
+        # the sides, rearrange it on the fly.
+        for item in [self.menu, self.textentry]+self.alerts:
+            if item:
+                m,mx,my = item
+                dx = mx+x-cx
+                dy = my+y-cy
+                if item in self.alerts:
+                    m.time-=1
+                else:
+                    dx += 2
+                if dx < 0: dx = 0
+                if dx > self.w-m.w: dx = self.w-m.w
+                if dy < 0: dy = 0
+                if dy > self.h-m.h+1: dy = self.h-m.h+1
+                m.draw(dx, dy)
 
-        # Display all alerts on the screen until their timers
-        # expire.
-        for a in self.alerts:
-            m,mx,my = a
-            m.time -= 1
-            m.draw(mx+x-cx, my+y-cy)
         self.alerts = [a for a in self.alerts if a[0].time > 0]
         

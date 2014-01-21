@@ -12,7 +12,7 @@ import copy, json
 CTRL_COORD = "coord"
 CTRL_MENU = "menu"
 CTRL_UNDO = "undo"
-CTRL_STRING = "string"
+CTRL_EDITOR = "editor"
 
 
 # Custom Cell subclass. Contains information such as terrain defensive bonus.
@@ -140,12 +140,26 @@ class Unit(grid.Unit):
 #   process
 class Rules(object):
     def __init__(self, data, edit=False):
-        # TODO: load the rules definition (types of units and properties)
         self.data = data
         self.edit = edit
 
         # Create the grid with what's left.
+        self.alerts = []
         self.grid = grid.Grid(data["grid"], self)
+        if not self.edit:
+            for t in self.grid.teams:
+                t.active = False
+            for p in data["players"]:
+                t = self.grid.teams[data["players"][p]["team"]]
+                t.name = p
+                t.color = data["players"][p]["color"]
+                t.active = True
+            for t in self.grid.teams:
+                if not t.active:
+                    t.name = "Absent"
+                    self.defeated(t)
+                while not self.grid.current_team().active and self.grid.day==1:
+                    self.grid.end_turn()
         self.checkpoint = copy.deepcopy(self.grid)
 
         # The history contains all actions for this player turn.
@@ -174,6 +188,7 @@ class Rules(object):
                     self.process(step)
             self.end_turn()
         self.alerts = []
+        self.last_edit = None
 
     # Return a JSON string that can be saved to a file. The current
     # turn in progress will be lost.
@@ -448,7 +463,7 @@ class Rules(object):
         w = max(len(m1),len(m2))+1
         a = widgets.Alert(w,2,m1+"\n"+m2,t.color)
         a.time = 50
-        self.alerts.append((a,10,5))
+        self.alerts.append((a,"c"))
 
         self.start = False
 
@@ -467,7 +482,7 @@ class Rules(object):
         m = "%s has been defeated!"%(team.name)
         a = widgets.Alert(len(m)+1,1,m,team.color)
         a.time = 50
-        self.alerts.append((a,10,5))
+        self.alerts.append((a,"c"))
 
     # When we end the turn, we flush the history buffer and save a new
     # checkpoint.
@@ -517,7 +532,11 @@ class Rules(object):
         elif self.state == "unit team": return CTRL_MENU
         elif self.state == "draw terrain": return CTRL_COORD
         elif self.state == "terrain team": return CTRL_MENU
-        elif self.state == "save map": return CTRL_STRING
+        elif self.state == "save map": return CTRL_EDITOR
+        elif self.state == "rule unit": return CTRL_MENU
+        elif self.state == "rule terrain": return CTRL_MENU
+        elif self.state == "page unit": return CTRL_EDITOR
+        elif self.state == "page terrain": return CTRL_EDITOR
 
         else: raise Exception("No such state.")
 
@@ -545,6 +564,10 @@ class Rules(object):
         elif self.state == "terrain team": return self.process_terrain_team(c)
         elif self.state == "draw terrain": return self.process_draw_terrain(c)
         elif self.state == "save map": return self.process_save_map(c)
+        elif self.state == "rule unit": return self.process_rule_unit(c)
+        elif self.state == "rule terrain": return self.process_rule_terrain(c)
+        elif self.state == "page unit": return self.process_page_unit(c)
+        elif self.state == "page terrain": return self.process_page_terrain(c)
 
 
     # State    : Play (expected input, tuple)
@@ -754,7 +777,7 @@ class Rules(object):
             x2,y2 = ox,oy
             a1.time = t1+t2+50
             a2.time = t1+t2+50
-            self.alerts += [(a1,x1+2,y1+2),(a2,x2-4,y2-2)]
+            self.alerts += [(a1,"tr"),(a2,"bl")]
             a.ready = False
 
             return self.commit()
@@ -775,8 +798,8 @@ class Rules(object):
         u = self.grid.unit_at(x,y)
         self.action = [(x,y)]
         
-        self.choices = ["Unit...", "Terrain...","Map Settings",
-                        "Save Map","Back"]
+        self.choices = ["Repeat","Place Unit", "Place Terrain","Map Settings",
+                        "Unit Rules", "Terrain Rules","Save Map","Back"]
 
         return self.transition("edit menu")
 
@@ -786,14 +809,30 @@ class Rules(object):
             raise Exception("Invalid option.")
         self.choices = []
         x,y = self.action[0]
+
+        if opt == "Repeat":
+            if not self.last_edit:
+                self.action = []
+                return self.transition("edit")
+            kind,thing,team = self.last_edit
+            if kind == "terrain":
+                self.action.append(thing)
+                if team:
+                    self.action.append(team)
+                self.choices = [(x,y)]
+                return self.transition("draw terrain")
+            elif kind == "unit":
+                self.action.append(thing)
+                self.choices = [team]
+                return self.process_unit_team(team)
             
-        if opt == "Unit...":
+        if opt == "Place Unit":
             self.choices = ["(None)"]
             for u in self.data["rules"]["units"]:
                 self.choices.append(u)
             return self.transition("edit unit")
         
-        if opt == "Terrain...":
+        if opt == "Place Terrain":
             self.choices = ["(None)"]
             for u in self.data["rules"]["terrain"]:
                 self.choices.append(u)
@@ -802,6 +841,19 @@ class Rules(object):
         if opt == "Map Settings":
             return self.transition("edit")
 
+        if opt == "Unit Rules":
+            self.choices = []
+            for u in self.data["rules"]["units"]:
+                self.choices.append(u)
+            self.choices.append("(New Unit)")
+            return self.transition("rule unit")
+
+        if opt == "Terrain Rules":
+            self.choices = []
+            for u in self.data["rules"]["terrain"]:
+                self.choices.append(u)
+            self.choices.append("(New Terrain)")
+            return self.transition("rule terrain")
 
         if opt == "Save Map":
             self.choices = {"Map Name": {"data":"","type":"str 15"}}
@@ -841,12 +893,15 @@ class Rules(object):
         self.action.append(opt)
 
         if t:
+            if t.unit:
+                self.grid.remove_unit(x,y)
             u = self.make_unit({"name": self.action[1]})
             team = None
             for q in self.grid.teams:
                 if q.name == opt:
                     team = q
             self.grid.add_unit(u, team, x, y)
+            self.last_edit = "unit",self.action[1],opt
 
         return self.transition("edit")
 
@@ -904,15 +959,21 @@ class Rules(object):
                     if u:
                         self.grid.remove_unit(x,y)
                     self.grid.grid.pop((x,y),None)
+                    self.last_edit = "terrain","(None)",None
                 else:
                     tile = self.make_cell({"name":self.action[1]})
+                    self.last_edit = "terrain",self.action[1],None
                     if len(self.action) > 2:
                         team = None
                         for q in self.grid.teams:
                             if q.name == self.action[2]:
                                 team = q
                         tile.team = team
+                        self.last_edit="terrain",self.action[1],self.action[2]
+                    if t:
+                        tile.unit = t.unit
                     self.grid.grid[(x,y)] = tile
+                    
 
         self.choices = []
         return self.transition("edit")
@@ -933,6 +994,40 @@ class Rules(object):
             storage.save(data, "maps","%s.json"%newname)
 
         self.action = []
+        return self.transition("edit")
+
+
+    def process_rule_unit(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.action.append(opt)
+
+        u = None
+        if opt != "(New)":
+            u = self.make_unit({"name":opt})
+
+        self.choices = { "Name": {"data": u.name if u else "",
+                                  "type": "str 12",
+                                  "ordering": 1 },
+                         "Move": {"data": str(u.move) if u else "",
+                                  "type": "int",
+                                  "ordering": 2 }
+                       }
+        return self.transition("page unit")
+
+
+    def process_page_unit(self, data):
+        return self.transition("edit")
+
+    def process_rule_terrain(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.action.append(opt)
+        self.choices = []
+        return self.transition("edit")
+
+
+    def process_page_unit(self, data):
         return self.transition("edit")
 
 

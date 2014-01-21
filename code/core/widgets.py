@@ -4,6 +4,7 @@
 
 from graphics import draw
 
+import time
 
 # A menu is a simple menu of selections. Created using a list of options,
 # it intercepts input, returning None if nothing has been selected yet,
@@ -13,6 +14,10 @@ class Menu(object):
     def __init__(self, items):
         self.items = list(items)
         self.index = 0
+        self.w = 0
+        self.h = len(self.items)
+        for s in self.items:
+            self.w = max(self.w,len(s))
         
         if len(self.items) == 0:
             raise Exception("Created a menu with no items.")
@@ -32,12 +37,8 @@ class Menu(object):
     # Draw the window on the terminal with the top left corner
     # at x,y. Will draw off the side of the screen.
     def draw(self, x, y, col=""):
-        w,h = 0,len(self.items)
-        for s in self.items:
-            w = max(w,len(s))
-
-        draw.border(x,y,w,h,"--||+")
-        draw.fill(x,y,w,h)
+        draw.border(x,y,self.w,self.h,"--||+")
+        draw.fill(x,y,self.w,self.h)
         for i,s in enumerate(self.items):
             draw.string(x,y+i,s,col+("?" if i==self.index else ""))
 
@@ -106,6 +107,8 @@ class Editor(object):
                 self.margin = l1
             if l2 > self.width:
                 self.width = l2
+        self.w = self.width+self.margin
+        self.h = len(self.fields)
 
     def handle_input(self, c):
         edit = self.data[self.fields[self.current]]
@@ -119,6 +122,7 @@ class Editor(object):
             self.current = (self.current+1)%len(self.fields)
         elif c == "backspace" and len(edit) > 0:
             edit = edit[:-1]
+            self.data[self.fields[self.current]] = edit
         elif c and len(c) == 1:
             if editt == "int":
                 if len(edit) < 6 and c in "0123456789":
@@ -128,8 +132,7 @@ class Editor(object):
                 if len(edit) < maxlen:
                     if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
                         edit += c
-
-        self.data[self.fields[self.current]] = edit
+            self.data[self.fields[self.current]] = edit
         return None
 
     def draw(self, x, y, col=""):
@@ -250,8 +253,8 @@ class Camera(object):
         self.cursor = 0,0
         self.viewport = 0,0
         self.blink = []
-        self.blink_anim = 0.0
-        self.blink_anim_speed = 0.1
+        self.animation = 1.0
+        self.anim_speed = 0.1
 
     # Returns the cursor when the player presses Enter. Moves the
     # cursor around when the arrow keys are pressed.
@@ -264,14 +267,14 @@ class Camera(object):
 
         # Move the camera to keep the cursor visible.
         cx, cy = self.viewport
-        if x < cx: self.viewport = cx-self.w/2,cy
-        if y < cy: self.viewport = cx,cy-self.h/2
-        if x >= cx+self.w: self.viewport = cx+self.w/2,cy
-        if y >= cy+self.h: self.viewport = cx,cy+self.h/2
+        if x < cx: self.viewport = cx-self.w//3,cy
+        if y < cy: self.viewport = cx,cy-self.h//3
+        if x >= cx+self.w: self.viewport = cx+self.w//3,cy
+        if y >= cy+self.h: self.viewport = cx,cy+self.h//3
 
         # If we press enter, send that information to the caller.
         if c == "enter":
-            self.blink_anim = 0.0
+            self.animation = 0.0
             return self.cursor
         return None
 
@@ -281,9 +284,9 @@ class Camera(object):
         cx,cy = self.viewport
 
         # The blink animation.
-        self.blink_anim += self.blink_anim_speed
-        if self.blink_anim >= 2:
-            self.blink_anim = 0.0
+        self.animation += self.anim_speed
+        if self.animation >= 2:
+            self.animation = 0.0
         
         draw.border(x,y,w,h,"--||+")
         draw.fill(x,y,w,h)
@@ -297,7 +300,7 @@ class Camera(object):
                 # Apply multiple levels of inverted color when tiles
                 # are highlighted by the interface.
                 cur = col
-                if self.blink_anim < 1.0 and (_x,_y) in self.blink: cur += "?"
+                if self.animation < 1 and (_x,_y) in self.blink: cur += "?"
                 if self.cursor == (_x,_y): cur += "w?"
                 
                 if ( tile and (tx-x >= 0) and (ty-y >= 0) and

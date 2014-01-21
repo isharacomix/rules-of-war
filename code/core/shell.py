@@ -30,6 +30,9 @@ class Shell(object):
         # IN THE FUTURE ALL OF THIS WILL NOT EXIST
         qdata = storage.read_data("maps","default.json")
         qdict = json.loads(qdata)
+        qdict["players"] = {"Ishara":{"team":1,"color":"b"},
+                            "Ramen":{"team":0,"color":"r"}
+                           }
         r = rules.Rules(qdict,True)
         self.g = grid.Controller(78,22,r)
 
@@ -39,11 +42,9 @@ class Shell(object):
     
     
     def display(self):
-        #gfx.clear()
         self.g.draw(1,1)
         if self.menu:
             self.menu.draw(1,20,"r")
-        #self.buff.draw(1,19)
 
     
     # Runs an interactive session of our game with the player until either
