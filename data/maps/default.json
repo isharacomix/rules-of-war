@@ -3,11 +3,12 @@
         "units": {
             "Infantry": {
                 "description": "Infantry are the cheapest unit and capture.", 
-                "move": 3, 
+                "move": 3,
                 "terrain": {
                     "Mountains": 2, 
                     "Grass": 1, 
-                    "City": 1
+                    "City": 1,
+		    "HQ": 1
                 }, 
                 "damage": {
                     "Infantry": 30, 
@@ -34,8 +35,13 @@
                     3
                 ], 
                 "properties": [
-                    "indirect"
+                    "indirect",
+		    "carry"
                 ], 
+                "carry": [
+                    "Infantry"
+                ], 
+		"capacity": 2,
                 "icon": "L"
             }
         }, 
@@ -50,9 +56,24 @@
                 }, 
                 "properties": [
                     "capture", 
-                    "build"
+                    "build",
+		    "repair"
                 ], 
+		"repair": {
+		    "Infantry": 20,
+		    "Artillery": 5
+		},
                 "icon": "#"
+            }, 
+            "HQ": {
+                "color": "w", 
+                "cash": 1000, 
+                "defense": 3, 
+                "properties": [
+                    "capture", 
+                    "hq"
+                ], 
+                "icon": "!"
             }, 
             "Mountains": {
                 "color": "y", 
@@ -255,13 +276,15 @@
                 "y": 13, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "HQ",
+		"team": 0
             }, 
             {
                 "y": 13, 
                 "x": 13, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "HQ",
+		"team": 1
             }, 
             {
                 "y": 14, 
@@ -720,7 +743,7 @@
                 "name": "Grass", 
                 "unit": {
                     "variables": {}, 
-                    "name": "Infantry", 
+                    "name": "Artillery", 
                     "team": 1
                 }
             }, 
@@ -728,19 +751,35 @@
                 "y": 2, 
                 "x": 29, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Grass",
+                "unit": {
+                    "variables": {}, 
+                    "name": "Infantry", 
+                    "team": 1
+                }
             }, 
             {
                 "y": 12, 
                 "x": 6, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Grass",
+                "unit": {
+                    "variables": {}, 
+                    "name": "Infantry", 
+                    "team": 1
+                }
+
             }, 
             {
                 "y": 4, 
                 "x": 17, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Grass",
+                "unit": {
+                    "variables": {}, 
+                    "name": "Infantry", 
+                    "team": 1
+                }
             }, 
             {
                 "y": 9, 
@@ -1559,7 +1598,7 @@
                 "name": "Grass", 
                 "unit": {
                     "variables": {}, 
-                    "name": "Artillery", 
+                    "name": "Infantry", 
                     "team": 0
                 }
             }, 

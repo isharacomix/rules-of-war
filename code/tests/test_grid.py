@@ -56,10 +56,7 @@ class TestGrid(unittest.TestCase):
     # This test makes sure that the variables that we loaded from
     # the JSON dictionary were stored correctly.
     def test_variables(self):
-        self.assertEqual(self.G.w,30)
-        self.assertEqual(self.G.h,15)
-        self.assertEqual(len(self.G.grid),15)
-        self.assertEqual(len(self.G.grid[0]),30)
+        self.assertEqual(len(self.G.grid),15*30)
 
     # Test the unit_at getter. Returns None for illegal cells.
     def test_unit_at(self):
@@ -76,10 +73,14 @@ class TestGrid(unittest.TestCase):
     def test_all_tiles(self):
         l = self.G.all_tiles()
         self.assertEqual(len(l),15*30)
-        self.assertEqual(l[30*4].unit.name, "Test")
+        total = 0
+        for x in l:
+            if x.unit:
+                total += 1
+        self.assertEqual(total, 2)
         m = self.G.all_tiles_xy()
         self.assertEqual(len(m),15*30)
-        self.assertEqual(m[4],(0,4))
+        self.assertEqual(sorted(m)[4],(0,4))
 
     # Test the distance measurer.
     def test_dist(self):
@@ -128,7 +129,7 @@ class TestGrid(unittest.TestCase):
         self.assertNotEqual(t,self.G.current_team())
         self.G.end_turn()
         self.assertEqual(t,self.G.current_team())
-        self.assertEqual(self.G.day,1)
+        self.assertEqual(self.G.day,2)
         t.active = False
         self.G.end_turn()
         self.assertNotEqual(t,self.G.current_team())

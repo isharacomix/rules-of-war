@@ -33,7 +33,7 @@ class Shell(object):
         qdict["players"] = {"Ishara":{"team":1,"color":"b"},
                             "Ramen":{"team":0,"color":"r"}
                            }
-        r = rules.Rules(qdict,True)
+        r = rules.Rules(qdict)#,True)
         self.g = grid.Controller(78,22,r)
 
         self.menu = None

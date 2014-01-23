@@ -168,6 +168,9 @@ class HPAlert(Alert):
         elif self.start > self.end:
             self.start -= 1
             self.write("%d%%"%self.start)
+        elif self.start < self.end:
+            self.start += 1
+            self.write("%d%%"%self.start)
         super(HPAlert, self).draw(x,y,col)
 
 

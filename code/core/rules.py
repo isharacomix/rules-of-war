@@ -25,6 +25,7 @@ class Cell(grid.Cell):
         self.cash = rules.get("cash",0)
         self.build = dict(rules.get("build",{}))
         self.description = rules.get("description","")
+        self.repair = dict(rules.get("repair",{}))
 
     # Create a rulebook section for this terrain.
     def rulebook(self):
@@ -42,6 +43,12 @@ class Cell(grid.Cell):
             report.append("Can produce units:")
             for b in self.build:
                 report.append("    %s costs $%d"%(b,self.build[b]))
+        if "hq" in self.properties:
+            report.append("This team loses if this property is captured")
+        if "repair" in self.properties:
+            report.append("Repairs the following units at start of a day:")
+            for b in self.repair:
+                report.append("    %s (+%d%%)"%(b,self.repair[b]))
 
         return report
 
@@ -66,6 +73,8 @@ class Unit(grid.Unit):
         self.terrain = dict(rules["terrain"])
         self.rng = tuple(rules.get("range",[1,1]))
         self.description = rules.get("description","")
+        self.capacity = rules.get("capacity",0)
+        self.carry = list(rules.get("carry",[]))
 
     # Create a rulebook section for this unit.
     def rulebook(self):
@@ -87,6 +96,11 @@ class Unit(grid.Unit):
             report.append("    vs %s -%d%%"%(u, self.damage[u]))
         if "capture" in self.properties:
             report.append("Can capture properties")
+        if "carry" in self.properties:
+            a = "Can carry up to %d of the following units:"%self.capacity
+            report.append(a)
+            for u in self.carry:
+                report.append("    %s"%u)
 
         return report
 
@@ -161,6 +175,7 @@ class Rules(object):
                 while not self.grid.current_team().active and self.grid.day==1:
                     self.grid.end_turn()
         self.checkpoint = copy.deepcopy(self.grid)
+        self.restartpoint = copy.deepcopy(self.grid)
 
         # The history contains all actions for this player turn.
         self.history = []
@@ -280,7 +295,11 @@ class Rules(object):
         _floodfill((x,y),unit.move,True)
         
         return [(x,y) for (x,y) in report if (not self.grid.unit_at(x,y) or
-                                              self.grid.unit_at(x,y) is unit)]
+                                              self.grid.unit_at(x,y) and
+                                              self.grid.unit_at(x,y).team is
+                                              unit.team)]
+
+
 
 
 
@@ -436,7 +455,7 @@ class Rules(object):
     def undo(self, total=False):
         if len(self.history) > 0:
             if total:
-                cp,action = self.history[0]
+                cp = self.restartcopy
                 self.history = []
                 self.start = True
             else:
@@ -450,12 +469,17 @@ class Rules(object):
 
     #
     def start_turn(self):
+        self.restartcopy = copy.deepcopy(self.grid)
         t = self.grid.current_team()
 
         # Give the player their money.
         for tile in self.grid.all_tiles():
-            if tile and tile.team is t:
-                t.cash += tile.cash
+            if tile.team is t:
+                u = tile.unit
+                if u and u.team is t and u.hp < 100 and u.name in tile.repair:
+                    u.hp = min(100,u.hp+tile.repair[u.name])
+                else:
+                    t.cash += tile.cash
 
         # Make the turn-start alert.
         m1 = "%s: Day %d"%(self.grid.name, self.grid.day)
@@ -465,6 +489,7 @@ class Rules(object):
         a.time = 50
         self.alerts.append((a,"c"))
 
+        self.checkpoint = copy.deepcopy(self.grid)
         self.start = False
 
     # Mark the team as defeated. This destroys all of their units, sets their
@@ -521,6 +546,8 @@ class Rules(object):
         if   self.state == "play"     : return CTRL_COORD
         elif self.state == "main menu": return CTRL_MENU
         elif self.state == "moving"   : return CTRL_COORD
+        elif self.state == "unload"   : return CTRL_MENU
+        elif self.state == "unload drop": return CTRL_COORD
         elif self.state == "action"   : return CTRL_MENU
         elif self.state == "attacking": return CTRL_COORD
         elif self.state == "building" : return CTRL_MENU
@@ -555,6 +582,8 @@ class Rules(object):
         elif self.state == "action"   : return self.process_action(c)
         elif self.state == "attacking": return self.process_attacking(c)
         elif self.state == "building" : return self.process_building(c)
+        elif self.state == "unload"   : return self.process_unload(c)
+        elif self.state == "unload drop": return self.process_unload_drop(c)
 
         elif self.state == "edit"     : return self.process_edit(c)
         elif self.state == "edit menu": return self.process_edit_menu(c)
@@ -597,7 +626,19 @@ class Rules(object):
         # "move" state so that we can see its movement range. Actually
         # moving the unit will be stopped at the process_moving step.
         if u:
-            self.choices = self.get_move_range(x,y)
+            self.choices = []
+            for (qx,qy) in self.get_move_range(x,y):
+                unit = self.grid.unit_at(qx,qy)
+                keep = True
+                if unit:
+                    keep = False
+                    if unit is u: keep = True
+                    if unit.name == u.name: keep = True
+                    if ("carry" in unit.properties and u.name in unit.carry
+                        and len(unit.carrying) < unit.capacity):
+                        keep = True
+                if keep:
+                    self.choices.append((qx,qy))
             return self.transition("moving")
 
         # Whatever else happens, main menu.
@@ -616,10 +657,28 @@ class Rules(object):
         ox,oy = self.action[0]
         u = self.grid.unit_at(ox,oy)
         team = self.grid.current_team()
+        utarg = self.grid.unit_at(x,y)
         
         # If coord was in range, move the unit and return possible actions.
         if (x,y) in self.choices and u.team is team and u.ready:
             self.action.append((x,y))
+
+            # Join units with the same name.
+            if (utarg and utarg.team is team and 
+               utarg.name == u.name and utarg is not u):
+                self.grid.remove_unit(ox,oy)
+                start_hp = utarg.hp
+                utarg.hp = min(100, utarg.hp+u.hp)
+                a = widgets.HPAlert(6,1,utarg.team.color,start_hp,utarg.hp,0)
+                a.time = (utarg.hp - start_hp) + 50
+                self.alerts += [(a,"tr")]
+                utarg.ready = False
+                return self.commit()
+            if (utarg and utarg is not u and "carry" in utarg.properties):
+                self.grid.tile_at(ox,oy).unit = None
+                utarg.carrying.append(u)
+                return self.commit()
+
             self.choices = []
 
             moved = (x,y)!=(ox,oy)
@@ -644,6 +703,8 @@ class Rules(object):
             if ("capture" in t.properties and "capture" in u.properties
                 and not team.allied(t.team)):
                 self.choices.append("Capture")
+            if (len(u.carrying) > 0):
+                self.choices.append("Unload")
 
             self.grid.move_unit((ox,oy),(x,y))
             self.choices += ["Wait","Cancel"]
@@ -703,6 +764,19 @@ class Rules(object):
         if opt not in self.choices:
             raise Exception("Invalid option.")
 
+        if opt == "Unload":
+            self.choices = []
+
+            x,y = self.action[1]
+            me = self.grid.unit_at(x,y)
+            i = 0
+            for u in me.carrying:
+                self.choices.append("%d %s %d%%"%(i, u.name, u.hp))
+                i+=1
+            self.choices.append("Done")
+            self.action.append(opt)
+            return self.transition("unload")
+
         if opt == "Attack":
             self.choices = []
 
@@ -734,10 +808,19 @@ class Rules(object):
             col = t.team.color if t.team else "w"
             a = widgets.HPAlert(6,1,col,start_hp,t.hp,0)
             a.time = (start_hp - t.hp) + 50
-            self.alerts += [(a,x+2,y+2)]
+            self.alerts += [(a,"tr")]
             if t.hp == 0:
                 t.hp = 100
+                old = t.team
                 t.team = unit.team
+                if "hq" in t.properties:
+                    t.properties.remove("hq")
+                    if old:
+                        if old.active:
+                            self.defeated(old)
+                        for tt in self.grid.all_tiles():
+                            if tt.team is old:
+                                tt.team = unit.team
             
             self.action.append(opt)
             return self.commit()
@@ -752,6 +835,62 @@ class Rules(object):
 
         if opt == "Cancel":
             return self.start_over()
+
+    #
+    def process_unload(self, opt):
+        if opt not in self.choices:
+            raise Exception("Nope.")
+
+        x,y = self.action[1]
+        t = self.grid.tile_at(x,y)
+        unit = t.unit
+        if opt == "Done":
+            self.action.append(opt)
+            self.choices = []
+            unit.ready = False
+            return self.commit()
+        else:
+            self.action.append(opt)
+            u = unit.carrying[int(opt.split()[0])]
+            self.choices = []
+            for (tx,ty) in [(x-1,y),(x,y+1),(x+1,y),(x,y-1)]:
+                t = self.grid.tile_at(tx,ty)
+                if t and t.name in u.terrain and not t.unit:
+                    self.choices.append((tx,ty))
+            if len(self.choices) == 0:
+                return self.transition("unload")
+            else:
+                self.action.append(opt)
+                return self.transition("unload drop")
+
+            
+
+    #
+    def process_unload_drop(self, coord):
+        if type(coord) not in (tuple,list):
+            raise Exception("Expected tuple!")
+
+        x,y = self.action[1]
+        unit = self.grid.unit_at(x,y)
+        dropper = int(self.action[-1].split()[0])
+        if coord in self.choices:
+            self.action.append(coord)
+            t = self.grid.tile_at(*coord)
+            t.unit = unit.carrying.pop(dropper)
+            t.unit.ready = False
+        else:
+            self.action.pop()
+
+        self.choices = []
+        x,y = self.action[1]
+        me = self.grid.unit_at(x,y)
+        i = 0
+        for u in me.carrying:
+            self.choices.append("%d %s %d%%"%(i, u.name, u.hp))
+            i += 1
+        self.choices.append("Done")
+        return self.transition("unload")
+
 
     #
     def process_attacking(self, coord):
