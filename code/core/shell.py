@@ -5,7 +5,7 @@
 
 from graphics import gfx, draw
 
-from . import rules, grid, widgets, storage
+from . import rules, grid, widgets, storage, landing
 
 import sys
 import os
@@ -19,7 +19,7 @@ import json
 class Shell(object):
     def __init__(self, *args):
 
-
+        self.g = None
         self.mode = "play"
         self.graphics = "ascii"
         if "--test" in args:
@@ -33,19 +33,13 @@ class Shell(object):
         qdict["players"] = {"Ishara":{"team":1,"color":"b"},
                             "Ramen":{"team":0,"color":"r"}
                            }
-        r = rules.Rules(qdict)#,True)
-        self.g = grid.Controller(78,22,r)
+
+        
 
         self.menu = None
+        self.m = None
         #self.buff = widgets.Buffer(10,5)
         #self.buff.write("Hello, world!")
-    
-    
-    def display(self):
-        self.g.draw(1,1)
-        if self.menu:
-            self.menu.draw(1,20,"r")
-
     
     # Runs an interactive session of our game with the player until either
     # the player stops playing or an error occurs. Here, we pass input to the
@@ -66,18 +60,28 @@ class Shell(object):
             print("Can't run in %d mode."%self.graphics)
             return
         
+        over = False
         try:
-            c = -1
             gfx.clear()
-            while c != "q" and not self.g.world.winners:
-                self.display()
+            while not over:
                 c = gfx.get_input()
-                if self.menu:
-                    q = self.menu.handle_input(c)
-                    if q:
-                        self.menu = None
-                else:
+                if self.g:
                     self.g.handle_input(c)
+                    self.g.draw(1,1)
+                elif self.m:
+                    q = self.m.handle_input(c)
+                    self.m.draw(1,1)
+
+                    if q == "quit":
+                        over = True
+                        self.m = None
+                    elif q:
+                        mode,data = q
+                        r = rules.Rules(data, mode == "edit")
+                        self.g = grid.Controller(78,22,r)
+                        self.m = None
+                elif self.m is None:
+                    self.m = landing.Landing(78,22)
 
                 gfx.refresh()
         except:

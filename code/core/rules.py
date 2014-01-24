@@ -86,6 +86,8 @@ class Unit(grid.Unit):
         report.append("Movement Range: %d"%self.move)
         for t in self.terrain:
             report.append("    %d over %s"%(self.terrain[t],t))
+        if "nocover" in self.properties:
+            report.append("This unit does not receive defensive cover")
         if "indirect" in self.properties:
             report.append("Indirect attack unit")
         if self.rng[0] != self.rng[1]:
@@ -108,6 +110,7 @@ class Unit(grid.Unit):
     # bonuses and terrain effects.
     def simulate(self, target, terrain, hp=None):
         if not hp: hp = self.hp
+        if "nocover" in self.properties: terrain = 0
         if target in self.damage:
             base = self.damage[target]
             cover = 1.0 - (.1*terrain.defense)
@@ -564,6 +567,7 @@ class Rules(object):
         elif self.state == "rule terrain": return CTRL_MENU
         elif self.state == "page unit": return CTRL_EDITOR
         elif self.state == "page terrain": return CTRL_EDITOR
+        elif self.state == "edit teams": return CTRL_MENU
 
         else: raise Exception("No such state.")
 
@@ -597,6 +601,7 @@ class Rules(object):
         elif self.state == "rule terrain": return self.process_rule_terrain(c)
         elif self.state == "page unit": return self.process_page_unit(c)
         elif self.state == "page terrain": return self.process_page_terrain(c)
+        elif self.state == "edit teams": return self.process_edit_teams(c)
 
 
     # State    : Play (expected input, tuple)
@@ -937,7 +942,7 @@ class Rules(object):
         u = self.grid.unit_at(x,y)
         self.action = [(x,y)]
         
-        self.choices = ["Repeat","Place Unit", "Place Terrain","Map Settings",
+        self.choices = ["Repeat","Place Unit", "Place Terrain","Edit Teams",
                         "Unit Rules", "Terrain Rules","Save Map","Back"]
 
         return self.transition("edit menu")
@@ -977,8 +982,16 @@ class Rules(object):
                 self.choices.append(u)
             return self.transition("edit terrain")
 
-        if opt == "Map Settings":
-            return self.transition("edit")
+        if opt == "Edit Teams":
+            self.choices = ["Red","Blue","Green","Yellow","Cyan",
+                            "Magenta","Done"]
+            for x,y in self.grid.all_tiles_xy():
+                if self.grid.unit_at(x,y):
+                    self.grid.remove_unit(x,y)
+                t = self.grid.tile_at(x,y)
+                t.team = None
+            self.grid.teams = []
+            return self.transition("edit teams")
 
         if opt == "Unit Rules":
             self.choices = []
@@ -995,11 +1008,35 @@ class Rules(object):
             return self.transition("rule terrain")
 
         if opt == "Save Map":
+            for t in self.grid.teams[:]:
+                kill = True
+                for c in self.grid.all_tiles():
+                    if c.unit and c.unit.team is t: kill = False
+                    if c.team is t and "hq" in c.properties: kill = False
+                if kill:
+                    self.grid.teams.remove(t)
             self.choices = {"Map Name": {"data":"","type":"str 15"}}
             return self.transition("save map")
 
         if opt == "Back":
             return self.transition("edit")
+
+    # 
+    def process_edit_teams(self, opt):
+        if opt not in self.choices:
+            raise Exception("Invalid option.")
+        self.choices.remove(opt)
+        
+        if opt == "Done" and len(self.grid.teams) == 0:
+            self.choices.append(opt)
+            return self.transition("edit teams")
+        elif opt == "Done" and len(self.grid.teams) > 0:
+            return self.transition("edit")
+        else:
+            t = self.make_team({"name":opt, "color":opt[0].lower()})
+            self.grid.teams.append(t)
+            return self.transition("edit teams")
+    
 
     # 
     def process_edit_unit(self, opt):
@@ -1072,7 +1109,7 @@ class Rules(object):
     def process_terrain_team(self, opt):
         if opt not in self.choices:
             raise Exception("Invalid option.")
-        self.choices = []
+        self.choices = [(x,y)]
         x,y = self.action[0]
         self.action.append(opt)
         return self.transition("draw terrain")

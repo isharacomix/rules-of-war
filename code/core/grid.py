@@ -89,6 +89,8 @@ class Grid(object):
             cd = self.grid[c]
             cell["name"] = cd.name
             cell["variables"] = dict(cd.variables)
+            if cd.team:
+                cell["team"] = self.teams.index(cd.team)
             if cd.unit:
                 cell["unit"] = {}
                 cell["unit"]["name"] = cd.unit.name

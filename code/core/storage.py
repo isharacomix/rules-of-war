@@ -7,7 +7,7 @@ import os
 # folder in the filename, and will be joined as appropriate. Returns None if
 # the file does not exist.
 def read(*args):
-    home = os.path.join(os.path.expanduser("~"),".rule-of-war")
+    home = os.path.join(os.path.expanduser("~"),".rules-of-war")
     target = os.path.join(home, *args)
     if not os.path.exists(target):
         return None
@@ -19,10 +19,19 @@ def read(*args):
     except:
         return None
 
+# This returns a list of filenames under the provided directory.
+def list_files(*args):
+    home = os.path.join(os.path.expanduser("~"),".rules-of-war")
+    target = os.path.join(home, *args)
+    if not os.path.exists(target):
+        return []
+    return [ f for f in os.listdir(target)
+             if os.path.isfile(os.path.join(target,f)) ]
+
 # This saves a file to the home directory, overwriting if appropriate.
 # Returns False if something goes wrong.
 def save(data, *args):
-    home = os.path.join(os.path.expanduser("~"),".rule-of-war")
+    home = os.path.join(os.path.expanduser("~"),".rules-of-war")
     targetdir = os.path.join(home, *(args[:-1]))
     target = os.path.join(home, *args)
     if not os.path.exists(targetdir):
@@ -50,3 +59,13 @@ def read_data(*args):
         return s
     except:
         return None
+
+# This returns a list of filenames under the provided data directory.
+def list_datafiles(*args):
+    data = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                        "..","..","data")
+    target = os.path.join(data, *args)
+    if not os.path.exists(target):
+        return []
+    return [ f for f in os.listdir(target) 
+             if os.path.isfile(os.path.join(target,f)) ]

@@ -3,12 +3,12 @@
         "units": {
             "Infantry": {
                 "description": "Infantry are the cheapest unit and capture.", 
-                "move": 3,
+                "move": 3, 
                 "terrain": {
                     "Mountains": 2, 
                     "Grass": 1, 
-                    "City": 1,
-		    "HQ": 1
+                    "HQ": 1, 
+                    "City": 1
                 }, 
                 "damage": {
                     "Infantry": 30, 
@@ -20,6 +20,7 @@
                 "icon": "i"
             }, 
             "Artillery": {
+                "capacity": 2, 
                 "description": "Artillery have range but are defenseless.", 
                 "move": 5, 
                 "terrain": {
@@ -34,19 +35,22 @@
                     2, 
                     3
                 ], 
-                "properties": [
-                    "indirect",
-		    "carry"
-                ], 
                 "carry": [
                     "Infantry"
                 ], 
-		"capacity": 2,
+                "properties": [
+                    "indirect", 
+                    "carry"
+                ], 
                 "icon": "L"
             }
         }, 
         "terrain": {
             "City": {
+                "repair": {
+                    "Infantry": 20, 
+                    "Artillery": 5
+                }, 
                 "color": "w", 
                 "cash": 1000, 
                 "defense": 3, 
@@ -56,30 +60,10 @@
                 }, 
                 "properties": [
                     "capture", 
-                    "build",
-		    "repair"
+                    "build", 
+                    "repair"
                 ], 
-		"repair": {
-		    "Infantry": 20,
-		    "Artillery": 5
-		},
                 "icon": "#"
-            }, 
-            "HQ": {
-                "color": "w", 
-                "cash": 1000, 
-                "defense": 3, 
-                "properties": [
-                    "capture", 
-                    "hq"
-                ], 
-                "icon": "!"
-            }, 
-            "Mountains": {
-                "color": "y", 
-                "defense": 3, 
-                "properties": [], 
-                "icon": "^"
             }, 
             "Grass": {
                 "color": "g", 
@@ -87,12 +71,38 @@
                 "properties": [], 
                 "icon": "."
             }, 
+            "HQ": {
+                "color": "w", 
+                "defense": 3, 
+                "cash": 1000, 
+                "icon": "!", 
+                "properties": [
+                    "capture", 
+                    "hq"
+                ]
+            }, 
             "Ocean": {
                 "color": "b", 
                 "defense": 0, 
                 "properties": [], 
                 "icon": "~"
+            }, 
+            "Mountains": {
+                "color": "y", 
+                "defense": 3, 
+                "properties": [], 
+                "icon": "^"
             }
+        }
+    }, 
+    "players": {
+        "Ramen": {
+            "color": "r", 
+            "team": 0
+        }, 
+        "Ishara": {
+            "color": "b", 
+            "team": 1
         }
     }, 
     "grid": {
@@ -276,15 +286,13 @@
                 "y": 13, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "HQ",
-		"team": 0
+                "name": "HQ"
             }, 
             {
                 "y": 13, 
                 "x": 13, 
                 "variables": {}, 
-                "name": "HQ",
-		"team": 1
+                "name": "HQ"
             }, 
             {
                 "y": 14, 
@@ -739,861 +747,1145 @@
             {
                 "y": 10, 
                 "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 3, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 7, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 3, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 9, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 9, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 3, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 0, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 3, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 10, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 28, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 3, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 1, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 7, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 6, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 0, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 3, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 28, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 14, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 3, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 3, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 28, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 7, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 8, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 1, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 6, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 13, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 24, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 2, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 28, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 2, 
+                "x": 7, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 20, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 5, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 4, 
+                "x": 10, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 25, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 7, 
+                "x": 15, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 26, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 0, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 5, 
+                "x": 3, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 0, 
+                "x": 27, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 6, 
+                "x": 4, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 28, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 7, 
+                "x": 5, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 10, 
+                "x": 29, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 1, 
+                "x": 16, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 19, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 12, 
+                "x": 17, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 11, 
+                "x": 18, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 21, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 8, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 13, 
+                "x": 22, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 9, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 8, 
+                "x": 23, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 14, 
+                "x": 11, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 14, 
+                "variables": {}, 
+                "name": "Grass"
+            }, 
+            {
+                "y": 9, 
+                "x": 12, 
+                "variables": {}, 
+                "name": "City"
+            }, 
+            {
+                "y": 12, 
+                "x": 15, 
                 "variables": {}, 
                 "name": "Grass", 
                 "unit": {
                     "variables": {}, 
-                    "name": "Artillery", 
-                    "team": 1
-                }
-            }, 
-            {
-                "y": 2, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass",
-                "unit": {
-                    "variables": {}, 
                     "name": "Infantry", 
                     "team": 1
                 }
             }, 
             {
                 "y": 12, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass",
-                "unit": {
-                    "variables": {}, 
-                    "name": "Infantry", 
-                    "team": 1
-                }
-
-            }, 
-            {
-                "y": 4, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass",
-                "unit": {
-                    "variables": {}, 
-                    "name": "Infantry", 
-                    "team": 1
-                }
-            }, 
-            {
-                "y": 9, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 3, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
                 "x": 13, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 7, 
-                "x": 0, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 2, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 3, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 9, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 9, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 3, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 0, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 0, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 3, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 10, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 28, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 0, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 3, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 2, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 1, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 2, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 7, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 6, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 0, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 3, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 28, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 14, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 0, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 3, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 3, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 28, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 7, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 8, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 0, 
                 "variables": {}, 
                 "name": "Grass", 
                 "unit": {
@@ -1601,306 +1893,6 @@
                     "name": "Infantry", 
                     "team": 0
                 }
-            }, 
-            {
-                "y": 1, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 1, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 2, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 6, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 24, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 2, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 28, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 2, 
-                "x": 7, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 20, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 5, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 4, 
-                "x": 10, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 25, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 7, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 26, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 0, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 5, 
-                "x": 3, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 0, 
-                "x": 27, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 6, 
-                "x": 4, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 28, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 7, 
-                "x": 5, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 10, 
-                "x": 29, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 1, 
-                "x": 16, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 19, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 17, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 11, 
-                "x": 18, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 21, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 8, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 13, 
-                "x": 22, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 9, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 8, 
-                "x": 23, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 14, 
-                "x": 11, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 14, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 9, 
-                "x": 12, 
-                "variables": {}, 
-                "name": "City"
-            }, 
-            {
-                "y": 12, 
-                "x": 15, 
-                "variables": {}, 
-                "name": "Grass"
-            }, 
-            {
-                "y": 12, 
-                "x": 13, 
-                "variables": {}, 
-                "name": "Grass"
             }, 
             {
                 "y": 10, 
@@ -2828,12 +2820,12 @@
             }
         ], 
         "allies": [], 
-        "name": "this is a test", 
+        "name": "tstmap", 
         "teams": [
             {
-                "color": "r", 
+                "color": "m", 
                 "variables": {}, 
-                "name": "Red"
+                "name": "Magenta"
             }, 
             {
                 "color": "b", 
@@ -2842,7 +2834,5 @@
             }
         ]
     }, 
-    "history": [
-
-    ]
+    "history": []
 }
