@@ -1109,6 +1109,7 @@ class Rules(object):
     def process_terrain_team(self, opt):
         if opt not in self.choices:
             raise Exception("Invalid option.")
+        x,y = self.action[0]
         self.choices = [(x,y)]
         x,y = self.action[0]
         self.action.append(opt)
