@@ -121,9 +121,10 @@ class Editor(object):
         elif c == "down":
             self.current = (self.current+1)%len(self.fields)
         elif c == "backspace" and len(edit) > 0:
-            edit = edit[:-1]
-            self.data[self.fields[self.current]] = edit
-        elif c and len(c) == 1:
+            if editt != "bool":
+                edit = edit[:-1]
+                self.data[self.fields[self.current]] = edit
+        elif c and len(c):
             if editt == "int":
                 if len(edit) < 6 and c in "0123456789":
                     edit += c
@@ -132,6 +133,11 @@ class Editor(object):
                 if len(edit) < maxlen:
                     if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
                         edit += c
+            if editt == "bool":
+                if edit == "Yes" and c in ["left","right"]:
+                    edit = "No"
+                elif edit == "No" and c in ["left","right"]:
+                    edit = "Yes"
             self.data[self.fields[self.current]] = edit
         return None
 

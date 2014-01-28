@@ -13,7 +13,7 @@ CTRL_COORD = "coord"
 CTRL_MENU = "menu"
 CTRL_UNDO = "undo"
 CTRL_EDITOR = "editor"
-
+CTRL_QUIT = "quit"
 
 # Custom Cell subclass. Contains information such as terrain defensive bonus.
 class Cell(grid.Cell):
@@ -192,6 +192,7 @@ class Rules(object):
 
         self.choices = []
         self.winners = None
+        self.done = False
 
         # other
         self.alerts = []
@@ -569,6 +570,8 @@ class Rules(object):
         elif self.state == "page terrain": return CTRL_EDITOR
         elif self.state == "edit teams": return CTRL_MENU
 
+        elif self.state == "quit": return CTRL_QUIT
+
         else: raise Exception("No such state.")
 
     # This processes input of two types: coordinates and strings.
@@ -932,6 +935,10 @@ class Rules(object):
             return self.start_over()
 
 
+
+
+
+
     # This is the root state for the editor. We put the editor states
     # in the same system as the rules so that we can take advantage of
     # the "make" constructors.
@@ -943,7 +950,8 @@ class Rules(object):
         self.action = [(x,y)]
         
         self.choices = ["Repeat","Place Unit", "Place Terrain","Edit Teams",
-                        "Unit Rules", "Terrain Rules","Save Map","Back"]
+                        "Unit Rules", "Terrain Rules","Save Map",
+                        "Quit to Main Menu","Back"]
 
         return self.transition("edit menu")
 
@@ -1018,8 +1026,13 @@ class Rules(object):
             self.choices = {"Map Name": {"data":"","type":"str 15"}}
             return self.transition("save map")
 
+        if opt == "Quit to Main Menu":
+            return self.transition("quit")
+
         if opt == "Back":
             return self.transition("edit")
+
+        
 
     # 
     def process_edit_teams(self, opt):
@@ -1180,32 +1193,284 @@ class Rules(object):
         self.action.append(opt)
 
         u = None
-        if opt != "(New)":
+        if opt != "(New Unit)":
             u = self.make_unit({"name":opt})
 
-        self.choices = { "Name": {"data": u.name if u else "",
+        props = u.properties if u else []
+        defaults = {}
+        defaults["Name"] = u.name if u else ""
+        defaults["Icon"] = u.icon if u else ""
+        defaults["Move"] = str(u.move) if u else ""
+        defaults["Is Indirect?"] = "Yes" if "indirect" in props else "No"
+        defaults["Range (from)"] = str(u.rng[0]) if u else "1"
+        defaults["Range (to)"] = str(u.rng[1]) if u else "1"
+        defaults["Can Carry?"] = "Yes" if "carry" in props else "No"
+        defaults["Capacity"] = str(u.capacity) if u else ""
+        defaults["No Cover?"] = "Yes" if "nocover" in props else "No"
+        defaults["Can Capture?"] = "Yes" if "capture" in props else "No"
+        self.choices = { "Name": {"data": defaults["Name"],
                                   "type": "str 12",
                                   "ordering": 1 },
-                         "Move": {"data": str(u.move) if u else "",
+                         "Icon": {"data": defaults["Icon"],
+                                  "type": "str 1",
+                                  "ordering": 2},
+                         "Move": {"data": defaults["Move"],
                                   "type": "int",
-                                  "ordering": 2 }
+                                  "ordering": 3 },
+                         "Is Indirect?": {"data": defaults["Is Indirect?"],
+                                          "type": "bool",
+                                          "ordering": 4},
+                         "Range (from)": {"data": defaults["Range (from)"],
+                                          "type": "int",
+                                          "ordering": 5 },
+                         "Range (to)": {"data": defaults["Range (to)"],
+                                        "type": "int",
+                                        "ordering": 6 },
+                         "Can Carry?": {"data": defaults["Can Carry?"],
+                                        "type": "bool",
+                                        "ordering": 7},
+                         "Capacity": {"data": defaults["Capacity"],
+                                      "type": "int",
+                                      "ordering": 8},
+                         "No Cover?": {"data": defaults["No Cover?"],
+                                       "type": "bool",
+                                       "ordering": 9},
+                         "Can Capture?": {"data": defaults["Can Capture?"],
+                                          "type": "bool",
+                                          "ordering": 10}
                        }
         return self.transition("page unit")
 
-
+    # The first page contains flags and base properties.
+    # The second contains movement.
+    # The third contains damage.
     def process_page_unit(self, data):
+        u = None
+        oldname = self.action[1]
+        if oldname != "(New Unit)":
+            u = self.make_unit({"name":oldname})
+
+        if len(self.action) == 2:
+            self.action.append(1)
+
+            if not u:
+                self.data["rules"]["units"][data["Name"]] = {}
+            elif oldname != data["Name"]:
+                x = self.data["rules"]["units"].pop(self.action[1])
+                self.data["rules"]["units"][data["Name"]] = x
+                for t in self.grid.all_tiles_xy():
+                    q = self.grid.unit_at(t[0],t[1])
+                    if q and q.name == oldname:
+                        self.grid.remove_unit(t[0],t[1])
+                for t in self.data["rules"]["units"]:
+                    if oldname in self.data["rules"]["units"][t]["damage"]:
+                        self.data["rules"]["units"][t]["damage"].pop(oldname)
+                for t in self.data["rules"]["terrain"]:
+                    if "build" in self.data["rules"]["terrain"][t]:
+                     if oldname in self.data["rules"]["terrain"][t]["build"]:
+                      self.data["rules"]["terrain"][t]["build"].pop(oldname)
+                    if "repair" in self.data["rules"]["terrain"][t]:
+                     if oldname in self.data["rules"]["terrain"][t]["repair"]:
+                      self.data["rules"]["terrain"][t]["repair"].pop(oldname)
+
+            ed = self.data["rules"]["units"][data["Name"]]
+
+            ed["icon"] = data["Icon"] if data["Icon"] else "?"
+            ed["move"] = int(data["Move"]) if data["Move"] else 0
+            lo = int(data["Range (from)"]) if data["Range (from)"] else 0
+            hi = int(data["Range (to)"]) if data["Range (to)"] else 0
+            ed["range"] = [lo,hi]
+            ed["capacity"] = int(data["Capacity"]) if data["Capacity"] else 0
+            ed["properties"] = []
+            if data["Is Indirect?"] == "Yes":
+                ed["properties"].append("indirect")
+            if data["Can Carry?"] == "Yes" :
+                ed["properties"].append("carry")
+            if data["No Cover?"] == "Yes":
+                ed["properties"].append("nocover")
+            if data["Can Capture?"] == "Yes":
+                ed["properties"].append("capture")
+            if not u:
+                ed["terrain"] = {}
+                ed["damage"] = {}
+
+            self.action[1] = data["Name"]
+
+            self.choices = {}
+            for t in self.data["rules"]["terrain"]:
+                s = ""
+                if t in ed["terrain"]:
+                    s = str(ed["terrain"][t])
+                self.choices[t] = {"data": s,
+                                   "type": "int"}
+
+            return self.transition("page unit")
+        elif len(self.action) == 3:
+            self.action.append(2)
+
+            ed = self.data["rules"]["units"][self.action[1]]
+            ed["terrain"] = {}
+            for d in data:
+                if data[d]:
+                    ed["terrain"][d] = int(data[d])
+            
+            self.choices = {}
+            for t in self.data["rules"]["units"]:
+                s = ""
+                if t in ed["damage"]:
+                    s = str(ed["damage"][t])
+                self.choices[t] = {"data": s,
+                                   "type": "int"}
+
+            return self.transition("page unit")
+        elif len(self.action) == 4:
+
+            ed = self.data["rules"]["units"][self.action[1]]
+            ed["damage"] = {}
+            for d in data:
+                if data[d]:
+                    ed["damage"][d] = int(data[d])
+            self.choices = {}
+            self.action = []
+
         return self.transition("edit")
 
     def process_rule_terrain(self, opt):
         if opt not in self.choices:
             raise Exception("Invalid option.")
         self.action.append(opt)
-        self.choices = []
-        return self.transition("edit")
+        self.choices = {}
+
+        t = None
+        if opt != "(New Terrain)":
+            t = self.make_cell({"name":opt})
+
+        props = t.properties if t else []
+        defaults = {}
+        defaults["Name"] = t.name if t else ""
+        defaults["Icon"] = t.icon if t else ""
+        defaults["Color"] = t.color if t else ""
+        defaults["Cash"] = str(t.cash) if t else ""
+        defaults["Capture?"] = "Yes" if "capture" in props else "No"
+        defaults["HQ?"] = "Yes" if "hq" in props else "No"
+        defaults["Build?"] = "Yes" if "build" in props else "No"
+        defaults["Repair?"] = "Yes" if "repair" in props else "No"
+        self.choices = { "Name": {"data": defaults["Name"],
+                                  "type": "str 12",
+                                  "ordering": 1 },
+                         "Icon": {"data": defaults["Icon"],
+                                  "type": "str 1",
+                                  "ordering": 2},
+                         "Color": {"data": defaults["Color"],
+                                  "type": "str 1",
+                                  "ordering": 3 },
+                         "Cash": {"data": defaults["Cash"],
+                                  "type": "int",
+                                  "ordering": 4 },
+                         "Capture?": {"data": defaults["Capture?"],
+                                      "type": "bool",
+                                      "ordering": 7},
+                         "HQ?": {"data": defaults["HQ?"],
+                                 "type": "bool",
+                                 "ordering": 9},
+                         "Build?": {"data": defaults["Build?"],
+                                    "type": "bool",
+                                    "ordering": 10},
+                         "Repair?": {"data": defaults["Repair?"],
+                                     "type": "bool",
+                                     "ordering": 11}
+                       }
+        return self.transition("page terrain")
 
 
-    def process_page_unit(self, data):
+
+
+    def process_page_terrain(self, data):
+        t = None
+        oldname = self.action[1]
+        if oldname != "(New Terrain)":
+            t = self.make_cell({"name":oldname})
+
+        if len(self.action) == 2:
+            self.action.append(1)
+
+            if not t:
+                self.data["rules"]["terrain"][data["Name"]] = {}
+            elif oldname != data["Name"]:
+                x = self.data["rules"]["terrain"].pop(oldname)
+                self.data["rules"]["terrain"][data["Name"]] = x
+                for t in self.grid.all_tiles_xy():
+                    q = self.grid.tile_at(t[0],t[1])
+                    if q and q.name == oldname:
+                        if self.grid.unit_at(t[0],t[1]):
+                            self.grid.remove_unit(t[0],t[1])
+                        self.grid.grid.pop((t[0],t[1]))
+                for t in self.data["rules"]["units"]:
+                    if oldname in self.data["rules"]["units"][t]["terrain"]:
+                        self.data["rules"]["units"][t]["terrain"].pop(oldname)
+
+
+            ed = self.data["rules"]["terrain"][data["Name"]]
+
+            ed["icon"] = data["Icon"] if data["Icon"] else "?"
+            ed["color"] = data["Color"]
+            ed["cash"] = int(data["Cash"]) if data["Cash"] else 0
+            if data["Capture?"] == "Yes":
+                ed["properties"].append("capture")
+            if data["HQ?"] == "Yes" :
+                ed["properties"].append("hq")
+            if data["Build?"] == "Yes":
+                ed["properties"].append("build")
+            if data["Repair?"] == "Yes":
+                ed["properties"].append("repair")
+            if not t:
+                ed["build"] = {}
+                ed["repair"] = {}
+
+            self.action[1] = data["Name"]
+
+            self.choices = {}
+            for t in self.data["rules"]["units"]:
+                s = ""
+                if t in ed["build"]:
+                    s = str(ed["build"][t])
+                self.choices[t] = {"data": s,
+                                   "type": "int"}
+
+            return self.transition("page terrain")
+
+        if len(self.action) == 3:
+            self.action.append(2)
+
+            ed = self.data["rules"]["terrain"][oldname]
+            ed["build"] = {}
+            for d in data:
+                if data[d]:
+                    ed["build"][d] = int(data[d])
+            
+            self.choices = {}            
+            for t in self.data["rules"]["units"]:
+                s = ""
+                if t in ed["repair"]:
+                    s = str(ed["repair"][t])
+                self.choices[t] = {"data": s,
+                                   "type": "int"}
+
+            return self.transition("page terrain")
+        if len(self.action) == 4:
+            ed = self.data["rules"]["terrain"][oldname]
+            ed["repair"] = {}
+            for d in data:
+                if data[d]:
+                    ed["repair"][d] = int(data[d])
+            
+            self.choices = {}            
+            self.action = []
+
+            # I'm not even trying anymore. ;_;
+
         return self.transition("edit")
 
 
         
+

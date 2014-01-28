@@ -306,6 +306,8 @@ class Controller(object):
         # a menu or highlight tiles.
         if r:
             self.cam.blink = []
+            if r == "quit":
+                return "quit"
             if r == "coord":
                 self.cam.blink = self.world.choices
             if r == "menu":

@@ -65,9 +65,13 @@ class Shell(object):
             gfx.clear()
             while not over:
                 c = gfx.get_input()
+                q = None
                 if self.g:
-                    self.g.handle_input(c)
+                    q = self.g.handle_input(c)
                     self.g.draw(1,1)
+
+                    if q == "quit":
+                        self.g = None
                 elif self.m:
                     q = self.m.handle_input(c)
                     self.m.draw(1,1)
