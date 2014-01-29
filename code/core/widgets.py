@@ -133,6 +133,8 @@ class Editor(object):
                 if len(edit) < maxlen:
                     if c.lower() in "abcdefghijklmnopqrstuvwxyz 0123456789-_":
                         edit += c
+                    if maxlen == 1 and c in "!@#$%^&*()_+|-=\~`:;<>?/":
+                        edit += c
             if editt == "bool":
                 if edit == "Yes" and c in ["left","right"]:
                     edit = "No"

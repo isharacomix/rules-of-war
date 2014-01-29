@@ -239,8 +239,46 @@ class Rules(object):
     # a page for terrain.
     def make_rulebook(self):
         overview = [("Overview\n========","w!")]
-        overview.append(" ")
-        overview.append("One day I'll put the rules here.")
+        overview.append(""" 
+Rules of War is a turn-based tactical wargame. This page of the rulebook
+explains the basic controls of the game, while the following three pages
+will cover the specifics of the rules of this battle.
+ 
+Gameplay proceeds in turns. Up to six players can participate in a game,
+with each one represented by a color. The order of turns can be seen in
+the right-hand sidebar. During a turn, the player may move each of their
+units one time. Units that are able to move are the color of the team, and
+turn grey after moving. To move a unit, move the cursor over the unit and
+press "Enter". That unit's movement range will then appear. Move the cursor
+to a highlighted square and press "Enter" again to open that unit's action
+menu. Actions include "wait", "attack", "capture", and so on. All units have
+100% HP initially, and will lose HP in combat. If a unit's HP is reduced,
+it will do less damage to enemies and if HP hits 0%, the unit is permanently
+removed from the game.
+ 
+The playing field is represented by rectangular tiles. A tile is represented
+by a character that determines its Terrain. Different terrain can have
+different properties. Some terrain, such as forests, provide extra defensive
+cover to units. Some terrain can be captured by a team - these terrain provide
+money to their team at the start of each turn, and can sometimes repair and
+build new units.
+ 
+The objective of the game is to destroy all of the other teams' units. The
+last team standing wins. On some maps, there are "HQ" terrain, that when
+captured, immediately defeat that team.
+ 
+Feel free to experiment. You are able to undo moves and restart your turn as
+many times as you wish. When selecting a unit, if you select a tile that does
+not have a friendly unit, you will be presented with a menu from which you can
+choose to "undo", "start over", "surrender", or "end turn". Even if you
+surrender, your turn is not over until you select "End Turn".
+ 
+The next three pages detail all of the terrain and units in this map. The
+terrain and units differ in attack power, cost, and other properties from
+game to game. Be sure to read the manual at the start of each game so that
+you aren't surprised when you favorite unit is suddenly weaker than it was in
+your last game!
+                        """)
 
         
         quick = [("Quick Reference\n===============","w!")]
@@ -539,7 +577,7 @@ class Rules(object):
                     winner = False
         if winner:
             self.winners = [t for t in self.grid.teams if t.active]
-            #self.state = "over"
+            return self.transition("quit")
 
         return self.transition("play")
 
@@ -1350,6 +1388,7 @@ class Rules(object):
         defaults["Name"] = t.name if t else ""
         defaults["Icon"] = t.icon if t else ""
         defaults["Color"] = t.color if t else ""
+        defaults["Defense"] = t.defense if t else ""
         defaults["Cash"] = str(t.cash) if t else ""
         defaults["Capture?"] = "Yes" if "capture" in props else "No"
         defaults["HQ?"] = "Yes" if "hq" in props else "No"
@@ -1364,9 +1403,12 @@ class Rules(object):
                          "Color": {"data": defaults["Color"],
                                   "type": "str 1",
                                   "ordering": 3 },
+                         "Defense": {"data": defaults["Defense"],
+                                     "type": "int",
+                                     "ordering": 4 },
                          "Cash": {"data": defaults["Cash"],
                                   "type": "int",
-                                  "ordering": 4 },
+                                  "ordering": 5 },
                          "Capture?": {"data": defaults["Capture?"],
                                       "type": "bool",
                                       "ordering": 7},
@@ -1414,7 +1456,9 @@ class Rules(object):
 
             ed["icon"] = data["Icon"] if data["Icon"] else "?"
             ed["color"] = data["Color"]
+            ed["defense"] = int(data["Defense"]) if data["Defense"] else 0
             ed["cash"] = int(data["Cash"]) if data["Cash"] else 0
+            ed["properties"] = []
             if data["Capture?"] == "Yes":
                 ed["properties"].append("capture")
             if data["HQ?"] == "Yes" :
