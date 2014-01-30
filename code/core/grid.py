@@ -287,6 +287,8 @@ class Controller(object):
         # does.
         if self.rulebook:
             q = self.rulebook.handle_input(c)
+            if c in ["q","Enter"]:
+                self.rulebook = None
         elif self.textentry:
             q = self.textentry[0].handle_input(c)
             if q:

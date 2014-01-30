@@ -115,7 +115,7 @@ class Unit(grid.Unit):
             base = self.damage[target]
             cover = 1.0 - (.1*terrain.defense)
             return int(base*.01*hp*cover)
-        return None
+        return 0
 
     # This returns False if out of range and true if in range.
     def in_range(self, dist):
@@ -1362,6 +1362,7 @@ your last game!
 
             return self.transition("page unit")
         elif len(self.action) == 4:
+            self.action.append(3)
 
             ed = self.data["rules"]["units"][self.action[1]]
             ed["damage"] = {}
@@ -1369,6 +1370,25 @@ your last game!
                 if data[d]:
                     ed["damage"][d] = int(data[d])
             self.choices = {}
+
+            if "carry" not in u.properties:
+                self.action = []
+                return self.transition("edit")
+
+            for t in self.data["rules"]["units"]:
+                s = "No"
+                if "carry" in ed and t in ed["carry"]:
+                    s = "Yes"
+                self.choices[t] = {"data": s,
+                                   "type": "bool"}
+            return self.transition("page unit")
+        elif len(self.action) == 5:
+            ed = self.data["rules"]["units"][self.action[1]]
+            ed["carry"] = []
+            for d in data:
+                if data[d] == "Yes":
+                    ed["carry"].append(d)
+
             self.action = []
 
         return self.transition("edit")
@@ -1388,7 +1408,7 @@ your last game!
         defaults["Name"] = t.name if t else ""
         defaults["Icon"] = t.icon if t else ""
         defaults["Color"] = t.color if t else ""
-        defaults["Defense"] = t.defense if t else ""
+        defaults["Defense"] = str(t.defense) if t else ""
         defaults["Cash"] = str(t.cash) if t else ""
         defaults["Capture?"] = "Yes" if "capture" in props else "No"
         defaults["HQ?"] = "Yes" if "hq" in props else "No"

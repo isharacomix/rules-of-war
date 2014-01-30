@@ -1,34 +1,89 @@
 {
     "rules": {
         "units": {
+            "APC": {
+                "capacity": 1, 
+                "move": 5, 
+                "terrain": {
+                    "City": 1, 
+                    "Grass": 1, 
+                    "HQ": 1, 
+                    "Factory": 1
+                }, 
+                "damage": {}, 
+                "range": [
+                    1, 
+                    1
+                ], 
+                "carry": [
+                    "Infantry"
+                ], 
+                "properties": [
+                    "carry"
+                ], 
+                "icon": "P"
+            }, 
             "Infantry": {
+                "capacity": 0, 
                 "description": "Infantry are the cheapest unit and capture.", 
                 "move": 3, 
                 "terrain": {
-                    "Mountains": 2, 
+                    "City": 1, 
                     "Grass": 1, 
                     "HQ": 1, 
-                    "City": 1
+                    "Mountains": 2
                 }, 
                 "damage": {
+                    "APC": 10, 
                     "Infantry": 30, 
+                    "Tank": 10, 
                     "Artillery": 10
                 }, 
+                "range": [
+                    1, 
+                    1
+                ], 
                 "properties": [
                     "capture"
                 ], 
                 "icon": "i"
             }, 
+            "Tank": {
+                "capacity": 0, 
+                "move": 5, 
+                "terrain": {
+                    "City": 1, 
+                    "Grass": 1, 
+                    "HQ": 1, 
+                    "Factory": 1
+                }, 
+                "damage": {
+                    "APC": 60, 
+                    "Infantry": 40, 
+                    "Tank": 60, 
+                    "Artillery": 60
+                }, 
+                "range": [
+                    1, 
+                    1
+                ], 
+                "properties": [], 
+                "icon": "T"
+            }, 
             "Artillery": {
-                "capacity": 2, 
+                "capacity": 0, 
                 "description": "Artillery have range but are defenseless.", 
                 "move": 5, 
                 "terrain": {
                     "City": 1, 
-                    "Grass": 1
+                    "Grass": 1, 
+                    "HQ": 1, 
+                    "Factory": 1
                 }, 
                 "damage": {
+                    "APC": 70, 
                     "Infantry": 70, 
+                    "Tank": 40, 
                     "Artillery": 70
                 }, 
                 "range": [
@@ -39,8 +94,7 @@
                     "Infantry"
                 ], 
                 "properties": [
-                    "indirect", 
-                    "carry"
+                    "indirect"
                 ], 
                 "icon": "L"
             }
@@ -48,38 +102,59 @@
         "terrain": {
             "City": {
                 "repair": {
-                    "Infantry": 20, 
-                    "Artillery": 5
+                    "APC": 20, 
+                    "Infantry": 40, 
+                    "Tank": 20, 
+                    "Artillery": 20
+                }, 
+                "color": "w", 
+                "cash": 1000, 
+                "defense": 3, 
+                "build": {}, 
+                "properties": [
+                    "capture", 
+                    "repair"
+                ], 
+                "icon": "#"
+            }, 
+            "Mountains": {
+                "color": "y", 
+                "defense": 3, 
+                "properties": [], 
+                "icon": "^"
+            }, 
+            "HQ": {
+                "color": "w", 
+                "defense": 3, 
+                "cash": 1000, 
+                "properties": [
+                    "capture", 
+                    "hq"
+                ], 
+                "icon": "!"
+            }, 
+            "Factory": {
+                "repair": {
+                    "APC": 20, 
+                    "Infantry": 40, 
+                    "Tank": 20, 
+                    "Artillery": 20
                 }, 
                 "color": "w", 
                 "cash": 1000, 
                 "defense": 3, 
                 "build": {
+                    "APC": 3000, 
                     "Infantry": 1000, 
-                    "Artillery": 5000
+                    "Tank": 5000, 
+                    "Artillery": 7000
                 }, 
                 "properties": [
                     "capture", 
                     "build", 
                     "repair"
                 ], 
-                "icon": "#"
-            }, 
-            "Grass": {
-                "color": "g", 
-                "defense": 1, 
-                "properties": [], 
-                "icon": "."
-            }, 
-            "HQ": {
-                "color": "w", 
-                "defense": 3, 
-                "cash": 1000, 
-                "icon": "!", 
-                "properties": [
-                    "capture", 
-                    "hq"
-                ]
+                "icon": "$"
             }, 
             "Ocean": {
                 "color": "b", 
@@ -87,22 +162,22 @@
                 "properties": [], 
                 "icon": "~"
             }, 
-            "Mountains": {
-                "color": "y", 
-                "defense": 3, 
+            "Grass": {
+                "color": "g", 
+                "defense": 1, 
                 "properties": [], 
-                "icon": "^"
+                "icon": "."
             }
         }
     }, 
     "players": {
-        "Ramen": {
-            "color": "r", 
-            "team": 0
-        }, 
         "Ishara": {
             "color": "b", 
             "team": 1
+        }, 
+        "Ramen": {
+            "color": "r", 
+            "team": 0
         }
     }, 
     "grid": {
@@ -172,7 +247,7 @@
                 "y": 4, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 12, 
@@ -190,7 +265,7 @@
                 "y": 1, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 5, 
@@ -268,7 +343,7 @@
                 "y": 14, 
                 "x": 10, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 8, 
@@ -286,19 +361,19 @@
                 "y": 13, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "HQ"
+                "name": "Grass"
             }, 
             {
                 "y": 13, 
                 "x": 13, 
                 "variables": {}, 
-                "name": "HQ"
+                "name": "Grass"
             }, 
             {
                 "y": 14, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 11, 
@@ -322,7 +397,7 @@
                 "y": 1, 
                 "x": 28, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 12, 
@@ -406,7 +481,7 @@
                 "y": 10, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 6, 
@@ -424,7 +499,7 @@
                 "y": 2, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -466,7 +541,7 @@
                 "y": 4, 
                 "x": 7, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 1, 
@@ -484,7 +559,7 @@
                 "y": 9, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 4, 
@@ -496,7 +571,7 @@
                 "y": 3, 
                 "x": 26, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 10, 
@@ -556,7 +631,7 @@
                 "y": 6, 
                 "x": 9, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory"
             }, 
             {
                 "y": 5, 
@@ -586,7 +661,7 @@
                 "y": 6, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 10, 
@@ -598,7 +673,7 @@
                 "y": 9, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Ocean"
             }, 
             {
                 "y": 4, 
@@ -610,13 +685,13 @@
                 "y": 3, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 7, 
                 "x": 4, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 4, 
@@ -640,7 +715,8 @@
                 "y": 2, 
                 "x": 16, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City", 
+                "team": 1
             }, 
             {
                 "y": 3, 
@@ -742,7 +818,7 @@
                 "y": 3, 
                 "x": 28, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 10, 
@@ -754,7 +830,7 @@
                 "y": 2, 
                 "x": 29, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 12, 
@@ -772,7 +848,7 @@
                 "y": 9, 
                 "x": 7, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 3, 
@@ -802,19 +878,19 @@
                 "y": 1, 
                 "x": 12, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory"
             }, 
             {
                 "y": 4, 
                 "x": 13, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 4, 
@@ -832,7 +908,7 @@
                 "y": 1, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 5, 
@@ -910,7 +986,7 @@
                 "y": 1, 
                 "x": 26, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 1, 
@@ -958,13 +1034,13 @@
                 "y": 2, 
                 "x": 21, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 9, 
                 "x": 8, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 9, 
@@ -982,7 +1058,7 @@
                 "y": 12, 
                 "x": 23, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 3, 
@@ -1006,7 +1082,7 @@
                 "y": 13, 
                 "x": 12, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -1036,7 +1112,7 @@
                 "y": 5, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 10, 
@@ -1078,7 +1154,8 @@
                 "y": 11, 
                 "x": 6, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City", 
+                "team": 0
             }, 
             {
                 "y": 1, 
@@ -1096,7 +1173,7 @@
                 "y": 6, 
                 "x": 18, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory"
             }, 
             {
                 "y": 11, 
@@ -1150,7 +1227,7 @@
                 "y": 9, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 9, 
@@ -1162,7 +1239,7 @@
                 "y": 2, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 3, 
@@ -1192,7 +1269,7 @@
                 "y": 0, 
                 "x": 29, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 2, 
@@ -1204,7 +1281,8 @@
                 "y": 11, 
                 "x": 7, 
                 "variables": {}, 
-                "name": "City"
+                "name": "City", 
+                "team": 0
             }, 
             {
                 "y": 1, 
@@ -1294,7 +1372,7 @@
                 "y": 6, 
                 "x": 20, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
@@ -1312,7 +1390,7 @@
                 "y": 1, 
                 "x": 9, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 6, 
@@ -1324,7 +1402,7 @@
                 "y": 13, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -1342,7 +1420,7 @@
                 "y": 5, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 3, 
@@ -1360,7 +1438,7 @@
                 "y": 4, 
                 "x": 4, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 9, 
@@ -1378,7 +1456,7 @@
                 "y": 10, 
                 "x": 19, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 14, 
@@ -1444,7 +1522,8 @@
                 "y": 2, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City", 
+                "team": 1
             }, 
             {
                 "y": 14, 
@@ -1474,19 +1553,19 @@
                 "y": 8, 
                 "x": 1, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 3, 
                 "x": 4, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 0, 
                 "x": 28, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 2, 
@@ -1540,13 +1619,13 @@
                 "y": 6, 
                 "x": 22, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
                 "x": 23, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 8, 
@@ -1588,7 +1667,7 @@
                 "y": 1, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 1, 
@@ -1642,7 +1721,7 @@
                 "y": 5, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 1, 
@@ -1654,7 +1733,7 @@
                 "y": 2, 
                 "x": 26, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 11, 
@@ -1744,13 +1823,13 @@
                 "y": 14, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 13, 
@@ -1762,7 +1841,7 @@
                 "y": 8, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Ocean"
             }, 
             {
                 "y": 5, 
@@ -1774,7 +1853,7 @@
                 "y": 0, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 6, 
@@ -1816,7 +1895,7 @@
                 "y": 12, 
                 "x": 17, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 11, 
@@ -1870,29 +1949,19 @@
                 "y": 9, 
                 "x": 12, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 12, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass", 
-                "unit": {
-                    "variables": {}, 
-                    "name": "Infantry", 
-                    "team": 1
-                }
+                "name": "Grass"
             }, 
             {
                 "y": 12, 
                 "x": 13, 
                 "variables": {}, 
-                "name": "Grass", 
-                "unit": {
-                    "variables": {}, 
-                    "name": "Infantry", 
-                    "team": 0
-                }
+                "name": "Grass"
             }, 
             {
                 "y": 10, 
@@ -1916,7 +1985,7 @@
                 "y": 2, 
                 "x": 28, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 13, 
@@ -1934,7 +2003,7 @@
                 "y": 3, 
                 "x": 29, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 5, 
@@ -1952,7 +2021,8 @@
                 "y": 2, 
                 "x": 18, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory", 
+                "team": 1
             }, 
             {
                 "y": 4, 
@@ -1964,13 +2034,13 @@
                 "y": 1, 
                 "x": 23, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
                 "x": 11, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -1988,7 +2058,7 @@
                 "y": 6, 
                 "x": 0, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 3, 
@@ -2000,13 +2070,13 @@
                 "y": 7, 
                 "x": 1, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 2, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 4, 
@@ -2018,7 +2088,7 @@
                 "y": 9, 
                 "x": 5, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 6, 
@@ -2030,7 +2100,7 @@
                 "y": 7, 
                 "x": 7, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -2048,7 +2118,7 @@
                 "y": 10, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 11, 
@@ -2060,7 +2130,7 @@
                 "y": 0, 
                 "x": 26, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 13, 
@@ -2096,7 +2166,8 @@
                 "y": 2, 
                 "x": 20, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "HQ", 
+                "team": 1
             }, 
             {
                 "y": 14, 
@@ -2114,7 +2185,7 @@
                 "y": 8, 
                 "x": 8, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 8, 
@@ -2192,7 +2263,7 @@
                 "y": 2, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 11, 
@@ -2240,13 +2311,14 @@
                 "y": 14, 
                 "x": 19, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 2, 
                 "x": 17, 
                 "variables": {}, 
-                "name": "City"
+                "name": "City", 
+                "team": 1
             }, 
             {
                 "y": 9, 
@@ -2270,7 +2342,7 @@
                 "y": 3, 
                 "x": 22, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 14, 
@@ -2288,13 +2360,13 @@
                 "y": 13, 
                 "x": 10, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
                 "x": 11, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 11, 
@@ -2348,13 +2420,14 @@
                 "y": 1, 
                 "x": 29, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 13, 
                 "x": 6, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "HQ", 
+                "team": 0
             }, 
             {
                 "y": 8, 
@@ -2402,13 +2475,13 @@
                 "y": 0, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 2, 
                 "x": 2, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 7, 
@@ -2438,7 +2511,7 @@
                 "y": 5, 
                 "x": 20, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 3, 
@@ -2468,13 +2541,13 @@
                 "y": 9, 
                 "x": 25, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 14, 
                 "x": 26, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 0, 
@@ -2540,7 +2613,8 @@
                 "y": 11, 
                 "x": 9, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City", 
+                "team": 0
             }, 
             {
                 "y": 0, 
@@ -2654,13 +2728,14 @@
                 "y": 13, 
                 "x": 7, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory", 
+                "team": 0
             }, 
             {
                 "y": 11, 
                 "x": 20, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "City"
             }, 
             {
                 "y": 7, 
@@ -2708,7 +2783,7 @@
                 "y": 13, 
                 "x": 14, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Factory"
             }, 
             {
                 "y": 5, 
@@ -2720,7 +2795,7 @@
                 "y": 8, 
                 "x": 15, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Mountains"
             }, 
             {
                 "y": 8, 
@@ -2738,13 +2813,13 @@
                 "y": 0, 
                 "x": 24, 
                 "variables": {}, 
-                "name": "Grass"
+                "name": "Ocean"
             }, 
             {
                 "y": 14, 
                 "x": 3, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 2, 
@@ -2756,7 +2831,7 @@
                 "y": 9, 
                 "x": 4, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }, 
             {
                 "y": 9, 
@@ -2816,16 +2891,16 @@
                 "y": 8, 
                 "x": 27, 
                 "variables": {}, 
-                "name": "City"
+                "name": "Grass"
             }
         ], 
         "allies": [], 
-        "name": "tstmap", 
+        "name": "Intro", 
         "teams": [
             {
-                "color": "m", 
+                "color": "r", 
                 "variables": {}, 
-                "name": "Magenta"
+                "name": "Red"
             }, 
             {
                 "color": "b", 

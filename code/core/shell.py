@@ -27,15 +27,6 @@ class Shell(object):
         if "--sdl" in args:
             self.graphics = "sdl"
 
-        # IN THE FUTURE ALL OF THIS WILL NOT EXIST
-        qdata = storage.read_data("maps","default.json")
-        qdict = json.loads(qdata)
-        qdict["players"] = {"Ishara":{"team":1,"color":"b"},
-                            "Ramen":{"team":0,"color":"r"}
-                           }
-
-        
-
         self.menu = None
         self.m = None
         #self.buff = widgets.Buffer(10,5)
@@ -53,6 +44,14 @@ class Shell(object):
             suite = unittest.TestLoader().discover(start)
             unittest.TextTestRunner().run(suite)
             return
+
+        try:
+            gfx.start(self.graphics)
+        except:
+            if self.graphics == "sdl":
+                self.graphics = "ascii"
+            else:
+                self.graphics = "sdl"
 
         try:
             gfx.start(self.graphics)
