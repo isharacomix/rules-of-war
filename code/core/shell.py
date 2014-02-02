@@ -6,7 +6,7 @@
 
 from graphics import gfx, draw, sprites
 
-from . import storage
+from . import storage, session
 
 import sys
 import os
@@ -28,7 +28,7 @@ class Shell(object):
             self.graphics = "sdl"
 
         self.menu = None
-        self.game = None
+        self.game = session.Session(json.loads(storage.read_data("maps","Intro.json")))
     
     # Runs an interactive session of our game with the player until either
     # the player stops playing or an error occurs. If a game or the main

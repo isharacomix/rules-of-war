@@ -53,6 +53,8 @@ class Sprite(object):
         self.y = y
         self.w = w
         self.h = h
+        self.oldx = self.x
+        self.oldy = self.y
         if layer is not None:
             self.layer = layer
         self.sprites = []
@@ -65,32 +67,44 @@ class Sprite(object):
         self.dirty = True
         self.moved = True
         self.alive = True
+        self.visible = True
 
     # This renders a sprite on the actual terminal screen starting at x,y.
     # This will pass back up a dictionary of transparent cells to the parent
     # to be drawn over.
-    def render(self, x, y, bounds=None):
-        quaff = False
+    def render(self, x, y, bounds=None, update=None):
         if not bounds:
             bounds = ( x+self.x, y+self.y, x+self.x+self.w, y+self.y+self.h )
-        else: quaff = True
-
         
-        # If any of the sprites have moved, redraw the floor.
-        if self.dirty or len([s for s in self.sprites if s.moved]) > 0:
+        # If any of the sprites have moved, figure out which cells need to be
+        # redrawn.
+        if not update:
+            update = []
+        if self.dirty:
             for i in range(self.w):
                 for j in range(self.h):
-                    dx = i+x+self.x
-                    dy = j+y+self.y
-                    if (dx >= bounds[0] and dy >= bounds[1]
-                                        and dx < bounds[2] and dy < bounds[3]):
-                        glyph = self.surface[j][i]
-                        if glyph:
-                            gfx.draw(dx,dy,glyph.icon,glyph.color())
+                    update.append((i,j))
+        else:
+            for s in [s for s in self.sprites if s.moved or not s.alive]:
+                for i in range(s.oldx,s.oldx+s.w):
+                    for j in range(s.oldy,s.oldy+s.h):
+                        update.append((i,j))
         
-        # Set all the sprites has having been moved.
+        # Now redraw the cells. This is usually a NOP since update is usually
+        # empty.
+        for (i,j) in update:
+            dx = i+x+self.x
+            dy = j+y+self.y
+            if (dx >= bounds[0] and dy >= bounds[1] and i < self.w and i >= 0 and
+                     j < self.h and dx < bounds[2] and dy < bounds[3] and j >= 0):
+                glyph = self.surface[j][i]
+                if glyph:
+                    gfx.draw(dx,dy,glyph.icon,glyph.color())
+        
+        # Set all the sprites as no longer having been moved.
         for s in self.sprites:
-            s.render(x+self.x,y+self.y,bounds)
+            if s.visible:
+                s.render(x+self.x,y+self.y, bounds, [(i-s.x,j-s.y) for (i,j) in update])
             s.moved = False
             s.dirty = False
         
@@ -113,9 +127,28 @@ class Sprite(object):
         for i in range(self.w):
             for j in range(self.h):
                 self.putc(c, i, j, fg, bg, bold, invert)
+        self.dirty = True
+
+    # This recolors a sprite.
+    def colorize(self, fg=None, bg=None, bold=None, invert=None):
+        if fg is not None:
+            for g in self.surface:
+                g.fg = fg
+        if bg is not None:
+            for g in self.surface:
+                g.bg = bg
+        if bold is not None:
+            for g in self.surface:
+                g.bold = bold
+        if invert is not None:
+            for g in self.surface:
+                g.invert = invert
+        self.dirty = True
 
     # This moves the sprite.
     def move(self, dx, dy, absolute=False):
+        self.oldx = self.x
+        self.oldy = self.y
         if absolute:
             self.x,self.y = dx,dy
         else:
@@ -123,11 +156,34 @@ class Sprite(object):
             self.y += dy
         self.moved = True
         self.dirty = True
+    def move_to(self, dx, dy):
+        self.move(dx,dy,True)
 
     # This adds a sprite to the sprite manager. A sprite remains until its
     # "alive" is set to False.
     def add_sprite(self, sprite):
         self.sprites.append(sprite)
         self.sprites.sort(key=lambda s:s.layer)
+        self.dirty = True
+    
+    # This sets a sprite and all of its subsprites as dead. They will be removed
+    # from their managers in the next update.
+    def kill(self):
+        self.alive = False
+        for s in self.sprites:
+            s.kill()
+        self.moved = True
+        self.dirty = True
+            
+    # This hides a sprite.
+    def hide(self):
+        self.visible = False
+        self.moved = True
+        self.dirty = True
+
+    # This shows a sprite.
+    def show(self):
+        self.visible = True
+        self.moved = True
         self.dirty = True
 

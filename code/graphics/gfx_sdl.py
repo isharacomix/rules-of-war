@@ -150,7 +150,7 @@ def refresh():
             bg = "x"
             for e in col:
                 if e in "xrgybmcw": fg = e
-                if e in "XRGYBMCW": bg = q
+                if e in "XRGYBMCW": bg = e.lower()
                 if e == "!": bold = True
                 if e == "?": invert = True
             if invert:

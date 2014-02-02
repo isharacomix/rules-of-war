@@ -157,5 +157,5 @@ def draw(x,y,c,col=""):
             if c is not None:
                 _screen.addch(y,x,str(c),mod)
             else:
-                _screen.setch(y,x,1,mod)
+                _screen.chgat(y,x,1,mod)
 

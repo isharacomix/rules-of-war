@@ -1,5 +1,6 @@
 # Entities are TILES, OBJECTS, and TEAMS.
 
+from graphics import sprites
 
 # A Team is one "side" of a session in a game of RoW. Teams control Tiles and
 # Units, and may be allied with other teams. When a team is set to be inactive,
@@ -7,6 +8,7 @@
 class Team(object):
     def __init__(self, data):
         self.name = data["name"]
+        self.color = data["color"]
         self.cash = 0
         self.active = True
         self.allies = []
@@ -14,7 +16,8 @@ class Team(object):
     # Returns True if this team is allied with the other team.
     def is_allied(self, other):
         if other in self.allies:
-
+            return True
+        return False
 
 # A Tile is a location on the grid that can hold up to one unit.
 class Tile(object):
@@ -60,6 +63,8 @@ class Unit(object):
         self.max_ammo = data.get("ammo",0)
         self.max_fuel = data["fuel"]
         self.capacity = data.get("capacity",0)
+        self.x = None
+        self.y = None
         self.hp = 100
         self.team = None
         self.ready = True
@@ -70,6 +75,7 @@ class Unit(object):
         # Set the animation variables.
         self.anim = self.icon
         self.frame = 0
+        self.sprite = sprites.Sprite(0,0,1,1)
 
         # Read the flag variables.
         self.is_indirect = "indirect" in data["properties"]
@@ -81,6 +87,13 @@ class Unit(object):
         self.secpndary = data.get("secondary",{})
         self.carries = data.get("carries",[])
 
+    # Recursively get all the units that this unit is carrying.
+    def get_carrying(self):
+        report = []
+        for c in self.carrying:
+            report.append( c.get_carrying() )
+        return report
+
     # This function adds one frame to the animation cycle for the unit.
     def cycle_anim(self):
         self.frame += 1
@@ -91,6 +104,8 @@ class Unit(object):
         
         self.frame %= len(frames)
         self.anim = frames[self.frame]
+        
+        self.sprite.putc(self.anim,0,0,)
 
     # Returns True if this unit is allied with the other team, tile, or unit.
     def is_allied(self, other):
