@@ -80,9 +80,10 @@ class Grid(object):
                         carriee.sprite.hide()
                     return u
                 this.unit = _process_units(c["unit"])
-
+        
+        # To start the game, end the turn. It will proceed to player 0.
         self.day = 1
-        self.turn = 0
+        self.turn = None
 
     # Get the tile and unit at X,Y
     def get_at(self, x, y):
@@ -144,6 +145,31 @@ class Grid(object):
                 report.append((x+i    ,y-(r-i)))
         return report
 
+    # Get movement range of a unit. Returns all possible tiles that can be
+    # destinations. Some destinations are things like other units (for merging
+    # or loading). TODO, calc fuel cost and shortest path.
+    def get_move_range(self, unit):
+        report = []
+        def _floodfill(pos,r,top=False):
+            a,b = pos
+            t,u = self.grid.get_at(a,b)
+            if t and (not u or u.allied(unit)):
+                if not top:
+                    r -= unit.over.get(t.name,r)
+                if (a,b) not in report and t.name in unit.over:
+                    report.append((a,b))
+                if r > 0:
+                    _floodfill((a-1,b),r)
+                    _floodfill((a+1,b),r)
+                    _floodfill((a,b-1),r)
+                    _floodfill((a,b+1),r)
+        _floodfill((unit.x,unit.y),unit.move,True)
+        
+        return [(x,y) for (x,y) in report if (not self.grid.unit_at(x,y) or
+                                              self.grid.unit_at(x,y) and
+                                              self.grid.unit_at(x,y).team is
+                                              unit.team)]
+
     # Return distance (zero norm) between two points.
     def dist(self, start, end):
         x1,y1 = start
@@ -156,12 +182,18 @@ class Grid(object):
 
     # Return the current team.
     def current_team(self):
-        return self.teams[self.turn]
+        t = self.teams[self.turn]
+        if t.active: return t
+        return None
 
     # This ends the turn and passes play to the next player. All units are set
     # to acive. If a player has won the game at this point, set the winner
     # variable.
     def end_turn(self):
+        if self.turn is None:
+            self.turn = -1
+        
+        # Select the next active player in the roster.
         if len([t for t in self.teams if t.active]) == 0:
             self.day += 1
         else:
@@ -176,7 +208,23 @@ class Grid(object):
             u.ready = True
             u.colorize(u.team.color,"X",True,False)
 
-        # Determine the winning team.
+        # Repair units and draw income.
+        cur = self.current_team()
+        if cur:
+            for tile in self.grid.all_tiles():
+                if tile.team is cur:
+                    u = tile.unit
+                    if u and u.team and u.name in tile.repair:
+                        u.fuel = u.fuel_max
+                        u.ammo = u.ammo_max
+                    
+                    # Repairing a unit forfeits that tile's income.
+                    if u and u.team is cur and u.hp<100 and u.name in tile.repair:
+                        u.hp = min(100,u.hp+tile.repair[u.name])
+                    else:
+                        t.cash += tile.income
+
+        # Determine the winning team (if one exists).
         winner = True
         for at in [t for t in self.teams if t.active]:
             for ot in [t for t in self.teams if t.active]:
@@ -275,7 +323,6 @@ class Grid(object):
                 self.sprite.putc(tile.icon,x,y,tile.team.color,"X",True,False)
             else:
                 self.sprite.putc(tile.icon,x,y,tile.color,"X",False,False)
-            self.sprite.dirty = True
 
     # TODO MAY NEED TO BE FIXED ITS POSSIBLE SO POSSIBLE
     def export(self):

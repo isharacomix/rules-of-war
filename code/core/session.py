@@ -7,6 +7,9 @@ from . import grid
 
 from graphics import sprites
 
+import json
+import copy
+
 # In theory, the game engine should be able to handle multiple sessions
 # simultaneously. The session should be provided with a Dict generated from the
 # JSON of a map in the following format.
@@ -28,7 +31,12 @@ class Session(object):
             pteam.active = True
             pteam.name = p
         for t in [t for t in self.grid.teams if not t.active]:
+            t.name = "---"
             self.grid.purge(t,True)
+        
+        # Create the state machine widgets. These contain the ability to
+        # undo actions and whatnot.
+        self.action = None
         
         # Create the grid sprite.
         self.cursor = 0,0
@@ -38,7 +46,7 @@ class Session(object):
         self.cursor_sprite = sprites.Sprite(0,0,1,1,100)
         self.cursor_sprite.putc(None,0,0,"w","X",False,True)
         self.grid_sprite.add_sprite(self.cursor_sprite)
-        self.action = None
+        
 
     # This function takes the character that was most recently entered by the
     # player and handles it. Even if no player is playing, this function

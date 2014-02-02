@@ -64,7 +64,7 @@ class Sprite(object):
             for j in range(w):
                 newarray.append(None)
             self.surface.append(newarray)
-        self.dirty = True
+        self.dirty = []
         self.moved = True
         self.alive = True
         self.visible = True
@@ -80,15 +80,11 @@ class Sprite(object):
         # redrawn.
         if not update:
             update = []
-        if self.dirty:
-            for i in range(self.w):
-                for j in range(self.h):
+        update += self.dirty
+        for s in [s for s in self.sprites if s.moved or not s.alive]:
+            for i in range(s.oldx,s.oldx+s.w):
+                for j in range(s.oldy,s.oldy+s.h):
                     update.append((i,j))
-        else:
-            for s in [s for s in self.sprites if s.moved or not s.alive]:
-                for i in range(s.oldx,s.oldx+s.w):
-                    for j in range(s.oldy,s.oldy+s.h):
-                        update.append((i,j))
         
         # Now redraw the cells. This is usually a NOP since update is usually
         # empty.
@@ -106,10 +102,9 @@ class Sprite(object):
             if s.visible:
                 s.render(x+self.x,y+self.y, bounds, [(i-s.x,j-s.y) for (i,j) in update])
             s.moved = False
-            s.dirty = False
         
         # Set this sprite as no longer dirty.
-        self.dirty = False
+        self.dirty = []
         self.sprites = [s for s in self.sprites if s.alive]
 
     # This puts a character at x,y on the sprite. Returns True if it works,
@@ -118,7 +113,7 @@ class Sprite(object):
         g = Glyph(c,fg,bg,bold,invert)
         if x >= 0 and x < self.w and y >= 0 and y < self.h:
             self.surface[y][x] = g
-            self.dirty = True
+            self.dirty.append((x,y))
             return True
         return False
 
@@ -127,7 +122,6 @@ class Sprite(object):
         for i in range(self.w):
             for j in range(self.h):
                 self.putc(c, i, j, fg, bg, bold, invert)
-        self.dirty = True
 
     # This recolors a sprite.
     def colorize(self, fg=None, bg=None, bold=None, invert=None):
@@ -143,7 +137,7 @@ class Sprite(object):
         if invert is not None:
             for g in self.surface:
                 g.invert = invert
-        self.dirty = True
+        self.redraw()
 
     # This moves the sprite.
     def move(self, dx, dy, absolute=False):
@@ -155,7 +149,9 @@ class Sprite(object):
             self.x += dx
             self.y += dy
         self.moved = True
-        self.dirty = True
+        self.redraw()
+    
+    # This moves the sprite to a location.
     def move_to(self, dx, dy):
         self.move(dx,dy,True)
 
@@ -164,7 +160,6 @@ class Sprite(object):
     def add_sprite(self, sprite):
         self.sprites.append(sprite)
         self.sprites.sort(key=lambda s:s.layer)
-        self.dirty = True
     
     # This sets a sprite and all of its subsprites as dead. They will be removed
     # from their managers in the next update.
@@ -172,18 +167,23 @@ class Sprite(object):
         self.alive = False
         for s in self.sprites:
             s.kill()
+        self.visible = False
         self.moved = True
-        self.dirty = True
             
     # This hides a sprite.
     def hide(self):
         self.visible = False
         self.moved = True
-        self.dirty = True
 
     # This shows a sprite.
     def show(self):
         self.visible = True
         self.moved = True
-        self.dirty = True
-
+        self.redraw()
+    
+    # Set the whole sprite as dirty.
+    def redraw(self):
+        self.dirty = []
+        for x in range(self.w):
+            for y in range(self.h):
+                self.dirty.append((x,y))

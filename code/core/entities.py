@@ -57,8 +57,7 @@ class Unit(object):
     def __init__(self, unit, data):
         self.unit = unit
         self.icon = data["icon"]
-        self.movement = data["movement"]
-        self.over = data["over"]
+        self.move = data["move"]
         self.range = data["range"]
         self.max_ammo = data.get("ammo",0)
         self.max_fuel = data["fuel"]
@@ -84,8 +83,9 @@ class Unit(object):
         self.can_capture = "capture" in data["properties"]
         
         self.primary = data.get("primary",{})
-        self.secpndary = data.get("secondary",{})
+        self.secondary = data.get("secondary",{})
         self.carries = data.get("carries",[])
+        self.over = data["over"]
 
     # Recursively get all the units that this unit is carrying.
     def get_carrying(self):
@@ -93,6 +93,23 @@ class Unit(object):
         for c in self.carrying:
             report.append( c.get_carrying() )
         return report
+
+    # Simulate the damage of this unit attacking the target. Note that 0 damage
+    # means that the unit simply can't scratch the target, while None means it
+    # can't attack it period.
+    def simulate(self, target, cover, hp=None):
+        if target.no_cover: cover = 0
+        if target.unit in self.primary and self.ammo > 0:
+            base = self.primary[target.unit]
+            return int(base*.01*hp*(1.0-(.01*cover)))        
+        elif target.unit in self.secondary:
+            base = self.secondary[target.unit]
+            return int(base*.01*hp*(1.0-(.01*cover)))        
+        return None
+
+    # This returns False if out of range and true if in range.
+    def in_range(self, dist):
+        return (dist >= self.rng[0] and dist <= self.rng[1])
 
     # This function adds one frame to the animation cycle for the unit.
     def cycle_anim(self):
