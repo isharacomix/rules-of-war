@@ -153,6 +153,9 @@ def draw(x,y,c,col=""):
                     if e == "!": mod |= curses.A_BOLD
                     if e == "?": mod |= curses.A_REVERSE
                 mod |= _color(fg,bg)
-            
-            _screen.addch(y,x,str(c),mod)
+
+            if c is not None:
+                _screen.addch(y,x,str(c),mod)
+            else:
+                _screen.setch(y,x,1,mod)
 

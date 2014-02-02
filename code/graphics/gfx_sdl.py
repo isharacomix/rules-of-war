@@ -176,8 +176,16 @@ def clear():
 # are foreground, uppercase are background. Use an ! for bold and ? for
 # reverse. Pygame handles the matter of drawing off the screen.
 def draw(x,y,c,col=""):
-    global _screen, _changes
+    global _screen, _changes, _fakescreen
     if _screen:
-        if _changes.get((x,y)) != (c,col):
-            _changes[(x,y)] = (c,col)
+        if c != None:
+            if _changes.get((x,y)) != (c,col):
+                _changes[(x,y)] = (c,col)
+        else:
+            if (x,y) in _changes:
+                oldc,oldcol = _changes[(x,y)]
+                _changes[(x,y)] = oldc,col
+            elif (x,y) in _fakescreen:
+                oldc,oldcol = _fakescreen[(x,y)]
+                _changes[(x,y)] = oldc,col
 
