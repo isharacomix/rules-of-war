@@ -69,6 +69,13 @@ class Sprite(object):
         self.alive = True
         self.visible = True
 
+    # This will return all glyphs in the surface.
+    def all_glyphs(self):
+        report = []
+        for row in self.surface:
+            report += row
+        return row
+
     # This renders a sprite on the actual terminal screen starting at x,y.
     # This will pass back up a dictionary of transparent cells to the parent
     # to be drawn over.
@@ -125,17 +132,14 @@ class Sprite(object):
 
     # This recolors a sprite.
     def colorize(self, fg=None, bg=None, bold=None, invert=None):
-        if fg is not None:
-            for g in self.surface:
+        for g in self.all_glyphs():
+            if fg is not None:
                 g.fg = fg
-        if bg is not None:
-            for g in self.surface:
+            if bg is not None:
                 g.bg = bg
-        if bold is not None:
-            for g in self.surface:
+            if bold is not None:
                 g.bold = bold
-        if invert is not None:
-            for g in self.surface:
+            if invert is not None:  
                 g.invert = invert
         self.redraw()
 
@@ -187,3 +191,4 @@ class Sprite(object):
         for x in range(self.w):
             for y in range(self.h):
                 self.dirty.append((x,y))
+

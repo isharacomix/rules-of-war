@@ -68,11 +68,11 @@ class Grid(object):
                     u.x = x
                     u.y = y
                     self.units.append(u)
-                    unit.sprite.putc(u.icon,0,0,u.team.color,"X",True,False)
-                    unit.sprite.move_to(x,y)
-                    self.sprite.add_sprite(unit.sprite)
+                    u.sprite.putc(u.icon,0,0,u.team.color,"X",True,False)
+                    u.sprite.move_to(x,y)
+                    self.sprite.add_sprite(u.sprite)
                     self.units.append(u)
-                    for uc in unit.get("carrying",[]):
+                    for uc in udata.get("carrying",[]):
                         carriee = _process_units(uc)
                         u.carrying.append(carriee)
                         carriee.x = None
@@ -84,6 +84,13 @@ class Grid(object):
         # To start the game, end the turn. It will proceed to player 0.
         self.day = 1
         self.turn = None
+        self.alerts = []
+
+    # Pump the alerts from the grid.
+    def info(self):
+        oldalerts = self.alerts
+        self.alerts = []
+        return oldalerts
 
     # Get the tile and unit at X,Y
     def get_at(self, x, y):
@@ -94,21 +101,21 @@ class Grid(object):
     
     # Get the tile at X,Y
     def tile_at(self, x, y):
-        tile, unit = get_at(x, y)
+        tile, unit = self.get_at(x, y)
         return tile
         
     # Get the tile of a unit
     def utile(self, unit):
         if unit.x is None and unit.y is None:
             return None
-        tile, test = get_at(unit.x, unit.y)
+        tile, test = self.get_at(unit.x, unit.y)
         if test is not unit:
             raise Exception("Unit mismatch at %d,%d"%(unit.x,unit.y))
         return tile
         
     # Get the unit at X,Y
     def unit_at(self, x, y):
-        tile, unit = get_at(x, y)
+        tile, unit = self.get_at(x, y)
         return unit
 
     # Get all tile objects.
@@ -206,12 +213,12 @@ class Grid(object):
                     self.day += 1
         for u in self.units:
             u.ready = True
-            u.colorize(u.team.color,"X",True,False)
+            u.sprite.colorize(u.team.color,"X",True,False)
 
         # Repair units and draw income.
         cur = self.current_team()
         if cur:
-            for tile in self.grid.all_tiles():
+            for tile in self.all_tiles():
                 if tile.team is cur:
                     u = tile.unit
                     if u and u.team and u.name in tile.repair:
@@ -228,7 +235,7 @@ class Grid(object):
         winner = True
         for at in [t for t in self.teams if t.active]:
             for ot in [t for t in self.teams if t.active]:
-                if not at.allied(ot):
+                if not at.is_allied(ot):
                     winner = False
         if winner:
             self.winners = [t for t in self.grid.teams if t.active]

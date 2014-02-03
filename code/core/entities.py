@@ -12,6 +12,7 @@ class Team(object):
         self.cash = 0
         self.active = True
         self.allies = []
+        self.control = "human"
 
     # Returns True if this team is allied with the other team.
     def is_allied(self, other):

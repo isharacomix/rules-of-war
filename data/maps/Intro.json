@@ -27,13 +27,15 @@
                 "capacity": 0, 
                 "description": "Infantry are the cheapest unit and capture.", 
                 "move": 3, 
-                "terrain": {
+                "fuel": 50,
+                "ammo": 50,
+                "over": {
                     "City": 1, 
                     "Grass": 1, 
                     "HQ": 1, 
                     "Mountains": 2
                 }, 
-                "damage": {
+                "primary": {
                     "APC": 10, 
                     "Infantry": 30, 
                     "Tank": 10, 
@@ -369,7 +371,11 @@
                 "y": 13, 
                 "x": 13, 
                 "variables": {}, 
-                "terrain": "Grass"
+                "terrain": "Grass",
+                "unit": {
+                    "name": "Infantry",
+                    "team": 0
+                }
             }, 
             {
                 "y": 14, 
