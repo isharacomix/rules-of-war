@@ -100,7 +100,9 @@ class Session(object):
                 self.cursor_sprite.move_to(cx,cy)
                     
         # If we got a result from performing an action, we will be given
-        # either an order or a new action to perform.
+        # either an order or a new action to perform. The orders tell us that
+        # the action was complete and that we either need to commit it or
+        # undo our mess.
         if result:
             if result == rules.ACT_COMMIT:
                 self.history.append((copy.deepcopy(self.checkpoint), self.inputs))
@@ -119,8 +121,9 @@ class Session(object):
                 if len(self.history) > 0:
                     cp, acts = self.history.pop()
                 else:
-                    cp = copy.deepcopy(self.checkpoint)
-                self.grid = cp
+                    cp = self.checkpoint
+                self.grid = copy.deepcopy(cp)
+                self.checkpoint = copy.deepcopy(cp)
                 self.grid_sprite.add_sprite(self.grid.sprite)
                 self.grid.info()
                 self.action = rules.Begin()
@@ -149,7 +152,6 @@ class Session(object):
             if self.highlight:
                 self.highlight.kill()
                 self.highlight = None
-            
             if self.action.form == rules.FORM_COORD:
                 self.highlight = sprites.Sprite(0,0,self.grid.w,self.grid.h,50)
                 c = None

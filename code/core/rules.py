@@ -68,7 +68,7 @@ class Move(Action):
     # unit can do anything else.
     def perform(self, act, grid):
         if act not in self.choices:
-            return ACT_UNDO
+            return ACT_TRASH
     
         ox,oy = self.start
         x,y = act
@@ -78,7 +78,7 @@ class Move(Action):
         # We just undo whenever we try to move a unit that isn't ready and
         # isn't ours.
         if u1.team is not grid.current_team() or not u1.ready:
-            return ACT_UNDO
+            return ACT_TRASH
         
         grid.move_unit(u1,x,y)
         u1.ready = False
