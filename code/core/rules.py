@@ -4,7 +4,10 @@
 # after "perform" and modified during "update".
 
 
+FORM_COORD = "coord"
+
 ACT_COMMIT = "commit"
+ACT_TRASH = "trash"
 ACT_UNDO = "undo"
 ACT_END = "end"
 ACT_RESTART = "restart"
@@ -40,31 +43,45 @@ class Action(object):
 class Begin(Action):
     def __init__(self):
         self.choices = []
-        self.form = "coord"
+        self.form = FORM_COORD
 
     def perform(self, act, grid):
         x,y = act
         t,u = grid.get_at(x,y)
         if u:
-            return Move(x,y)
+            return Move(x,y,grid)
+        else:
+            return ACT_UNDO
         
         
 # MOVE follows BEGIN and expects COORD.
 # If the selected unit is on the active team and is ready,
 # then the 
 class Move(Action):
-    def __init__(self, x, y):
+    def __init__(self, x, y, grid):
         self.start = x,y
-        self.choices = []
-        self.form = "coord"
+        t,u = grid.get_at(x,y)
+        self.choices = grid.get_move_range(u)
+        self.form = FORM_COORD
     
+    # This performs the movement. After moving, we have to figure out if the
+    # unit can do anything else.
     def perform(self, act, grid):
+        if act not in self.choices:
+            return ACT_UNDO
+    
         ox,oy = self.start
         x,y = act
-        
         t1,u1 = grid.get_at(ox,oy)
         t2,u2 = grid.get_at(x,y)
         
+        # We just undo whenever we try to move a unit that isn't ready and
+        # isn't ours.
+        if u1.team is not grid.current_team() or not u1.ready:
+            return ACT_UNDO
+        
         grid.move_unit(u1,x,y)
-        return "commit"
+        u1.ready = False
+        u1.sprite.colorize("x","X",True,False)
+        return ACT_COMMIT
 

@@ -16,7 +16,7 @@ class Team(object):
 
     # Returns True if this team is allied with the other team.
     def is_allied(self, other):
-        if other in self.allies:
+        if other in self.allies or other is self:
             return True
         return False
 
@@ -45,7 +45,7 @@ class Tile(object):
     def is_allied(self, other):
         if not self.team:
             return False
-        if self.team.allied(other) or self.team.allied(other.team):
+        if self.team.is_allied(other) or self.team.is_allied(other.team):
             return True
         return False
 
@@ -129,7 +129,7 @@ class Unit(object):
     def is_allied(self, other):
         if not self.team:
             return False
-        if self.team.allied(other) or self.team.allied(other.team):
+        if self.team.is_allied(other) or self.team.is_allied(other.team):
             return True
         return False
 

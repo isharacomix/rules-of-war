@@ -44,15 +44,19 @@ class Session(object):
         replay = data.pop("history",[])
         self.data["history"] = []
         self.history = []
+        self.tab = 0
         
         # Create the grid sprite.
         self.cursor = 0,0
+        self.animation = 0.0
+        self.speed = 0.05
         self.grid_sprite = sprites.Sprite(0,0,60,24)
         self.grid_sprite.fill(' ')
         self.grid_sprite.add_sprite(self.grid.sprite)
         self.cursor_sprite = sprites.Sprite(0,0,1,1,100)
         self.cursor_sprite.putc(None,0,0,"w","X",False,True)
         self.grid_sprite.add_sprite(self.cursor_sprite)
+        self.highlight = None
         
     # This exports our data as a dictionary to be JSONified. If history is
     # included, it's like saving a snapshot of the game to be continued later.
@@ -75,11 +79,18 @@ class Session(object):
         result = None
         if self.grid.current_team().control == "human":
             result = None
-            if self.action.form == "coord":
+            if self.action.form == rules.FORM_COORD:
                 if c == "left": cx -=1
                 if c == "right": cx +=1
                 if c == "up": cy -= 1
                 if c == "down": cy += 1
+                if c == "\t":
+                    self.tab += 1
+                    tabbables = [u for u in self.grid.units if u.ready
+                                 and u.team is self.grid.current_team()]
+                    self.tab %= len(tabbables)
+                    u = tabbables[self.tab]
+                    cx,cy = u.x,u.y
                 if (self.cursor != (cx,cy)):
                     self.cursor = cx,cy
                     self.action.update(self.cursor, self.grid)
@@ -95,14 +106,21 @@ class Session(object):
                 self.history.append((copy.deepcopy(self.checkpoint), self.inputs))
                 self.checkpoint = copy.deepcopy(self.grid)
                 self.action = rules.Begin()
+            elif result == rules.ACT_TRASH:
+                self.grid.sprite.kill()
+                self.inputs = []
+                self.grid = copy.deepcopy(self.checkpoint)
+                self.grid_sprite.add_sprite(self.grid.sprite)
+                self.grid.info()
+                self.action = rules.Begin()
             elif result == rules.ACT_UNDO:
                 self.grid.sprite.kill()
-                if self.inputs:
-                    self.inputs = []
-                    self.grid = copy.deepcopy(self.checkpoint)
-                else:
+                cp = None
+                if len(self.history) > 0:
                     cp, acts = self.history.pop()
-                    self.grid = cp
+                else:
+                    cp = copy.deepcopy(self.checkpoint)
+                self.grid = cp
                 self.grid_sprite.add_sprite(self.grid.sprite)
                 self.grid.info()
                 self.action = rules.Begin()
@@ -110,8 +128,9 @@ class Session(object):
                 self.history = []
                 self.inputs = []
                 self.grid.sprite.kill()
-                self.grid = copy.deepcopy(self.startover())
-                self.checkpoint = copy.deepcopy(self.startover())
+                self.grid = copy.deepcopy(self.startover)
+                self.checkpoint = copy.deepcopy(self.startover)
+                self.grid_sprite.add_sprite(self.grid.sprite)
                 self.action = rules.Begin()
             elif result == rules.ACT_END:
                 history = []
@@ -125,10 +144,33 @@ class Session(object):
                 self.action = rules.Begin()
             else:
                 self.action = result
+            
+            # Set up various UI candy.
+            if self.highlight:
+                self.highlight.kill()
+                self.highlight = None
+            
+            if self.action.form == rules.FORM_COORD:
+                self.highlight = sprites.Sprite(0,0,self.grid.w,self.grid.h,50)
+                c = None
+                u = self.grid.unit_at(cx,cy)
+                if u:
+                    c = u.team.color
+                for (x,y) in self.action.choices:
+                    self.highlight.putc(None,x,y,c,None,False,True)
+                self.grid_sprite.add_sprite(self.highlight)
+                self.animation = 0.0
 
     # The session has multiple sprites that need to be rendered, from the
     # view of the grid to the mutliple popups that need to appear.
     def render(self, x, y):
+        self.animation += self.speed
+        if self.animation >= 1.0:
+            self.animation = 0.0
+            if self.highlight and self.highlight.visible:
+                self.highlight.hide()
+            elif self.highlight and not self.highlight.visible:
+                self.highlight.show()
         self.grid_sprite.render(0,0)
 
 

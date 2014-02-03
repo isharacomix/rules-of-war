@@ -159,11 +159,11 @@ class Grid(object):
         report = []
         def _floodfill(pos,r,top=False):
             a,b = pos
-            t,u = self.grid.get_at(a,b)
-            if t and (not u or u.allied(unit)):
+            t,u = self.get_at(a,b)
+            if t and (not u or u.is_allied(unit)):
                 if not top:
-                    r -= unit.over.get(t.name,r)
-                if (a,b) not in report and t.name in unit.over:
+                    r -= unit.over.get(t.terrain,r)
+                if (a,b) not in report and t.terrain in unit.over:
                     report.append((a,b))
                 if r > 0:
                     _floodfill((a-1,b),r)
@@ -172,9 +172,9 @@ class Grid(object):
                     _floodfill((a,b+1),r)
         _floodfill((unit.x,unit.y),unit.move,True)
         
-        return [(x,y) for (x,y) in report if (not self.grid.unit_at(x,y) or
-                                              self.grid.unit_at(x,y) and
-                                              self.grid.unit_at(x,y).team is
+        return [(x,y) for (x,y) in report if (not self.unit_at(x,y) or
+                                              self.unit_at(x,y) and
+                                              self.unit_at(x,y).team is
                                               unit.team)]
 
     # Return distance (zero norm) between two points.

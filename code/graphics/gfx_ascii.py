@@ -145,7 +145,7 @@ def draw(x,y,c,col=""):
         if x >= 0 and x < w and y >= 0 and y < h and (x,y)!=(w-1,h-1):
             mod = 0
             fg = "w"
-            bg = "x"
+            bg = "X"
             if curses.has_colors():
                 for e in col:
                     if e in "xrgybmcw": fg = e
