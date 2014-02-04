@@ -5,7 +5,7 @@
 
 from . import grid, rules
 
-from graphics import sprites
+from graphics import sprites, draw
 
 import copy
 

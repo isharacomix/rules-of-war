@@ -1,51 +1,49 @@
-# This module contains high-level drawing routines that utilize the basic
-# drawing functionality of the GFX module. The GFX module should be
-# initialized before attempting to use this module.
+# This module contains fancy actions that create new sprite objects that can
+# be drawn on the screen or blitted to another sprite.
 
-from . import gfx
-
-
-# This draws an individual character to the screen at the given X,Y position.
-# it is essentially a wrapper around the GFX draw function.
-def char(x,y,c,col=""):
-    gfx.draw(x,y,c,col)
+from . import sprites
 
 
-# This draws a string to the screen starting at the given X,Y position. If
-# the string runs over the edge of the screen, it is truncated. All characters
-# in the string have the same col.
-#  TODO: make something fancier like markup or something...
-def string(x,y,s,col=""):
+# This gives you a sprite that is a single character.
+def char(x,y,c,fg="w",bg="X",bold=False,invert=False,layer=0):
+    report = sprites.Sprite(x,y,1,1,layer)
+    report.putc(c,0,0,fg,bg,bold,invert)
+    return report
+
+
+# This creates a sprite for a string.
+def string(x,y,s,fg="w",bg="X",bold=False,invert=False,layer=0):
+    report = sprites.Sprite(x,y,len(s),1,layer)
+    i = 0
     for c in s:
-        gfx.draw(x,y,c,col)
-        x += 1
+        report.putc(c,i,0,fg,bg,bold,invert)
+        i += 1
+    return report
 
 
 # This fills a rectangle from x,y to x+w,y+h with the character c in the given
 # style. If the character isn't given, space is used (so it basically clears
 # the area).
-def fill(x,y,w,h,c=" ",col=""):
-    i = x
-    while i < x+w:
-        j = y
-        while j < y+h:
-            gfx.draw(i,j,c,col)
-            j += 1
-        i += 1
+def fill(x,y,w,h,c=" ",fg="w",bg="X",bold=False,invert=False,layer=0):
+    report = sprites.Sprite(x,y,w,h,layer)
+    report.fill(c,fg,bg,bold,invert)
+    return report
 
 
 # This draws a border around the box defined by x,y,w,h.
-def border(x,y,w,h,border="     ",col=""):
-    i = x
-    top,bottom,left,right,corner = border
-    for i in range(x,x+w):
-        gfx.draw(i,y-1,top,col)
-        gfx.draw(i,y+h,bottom,col)
-    for j in range(y,y+h):
-        gfx.draw(x-1,j,left,col)
-        gfx.draw(x+w,j,right,col)
-    gfx.draw(x-1,y-1,corner,col)    
-    gfx.draw(x-1,y+h,corner,col)
-    gfx.draw(x+w,y+h,corner,col)
-    gfx.draw(x+w,y-1,corner,col)
+def border(x,y,w,h,border="--||+ ",fg="w",bg="X",bold=False,invert=False,layer=0):
+    report = sprites.Sprite(x,y,w,h,layer)
+    top,bottom,left,right,corner,fill = border
+    report.fill(fill,fg,bg,bold,invert)
+    for i in range(w):
+        report.putc(top,i,0,fg,bg,bold,invert)
+        report.putc(bottom,i,h-1,fg,bg,bold,invert)
+    for j in range(h):
+        report.putc(left,0,j,fg,bg,bold,invert)
+        report.putc(right,w-1,j,fg,bg,bold,invert)
+    report.putc(corner,0,0,fg,bg,bold,invert)
+    report.putc(corner,0,h-1,fg,bg,bold,invert)
+    report.putc(corner,w-1,0,fg,bg,bold,invert)
+    report.putc(corner,w-1,h-1,fg,bg,bold,invert)
+    return report
         
