@@ -3,7 +3,7 @@
 # set of RULES. The RULES and MAP are usually provided in the form of a JSON
 # data file.
 
-from . import grid, rules
+from . import grid, rules, widgets
 
 from graphics import sprites, draw
 
@@ -49,6 +49,7 @@ class Session(object):
         # Create the grid sprite.
         self.cursor = 0,0
         self.animation = 0.0
+        self.menu = None
         self.speed = 0.05
         self.grid_sprite = sprites.Sprite(0,0,60,24)
         self.grid_sprite.fill(' ')
@@ -56,7 +57,9 @@ class Session(object):
         self.cursor_sprite = sprites.Sprite(0,0,1,1,100)
         self.cursor_sprite.putc(None,0,0,"w","X",False,True)
         self.grid_sprite.add_sprite(self.cursor_sprite)
-        self.highlight = None
+
+        self.highlight = sprites.Sprite(0,0,1,1)
+        self.highlight.hide()
         
     # This exports our data as a dictionary to be JSONified. If history is
     # included, it's like saving a snapshot of the game to be continued later.
@@ -77,6 +80,7 @@ class Session(object):
         # allows the player to move the map around.
         cx,cy = self.cursor
         result = None
+        info = {}
         if self.grid.current_team().control == "human":
             result = None
             if self.action.form == rules.FORM_COORD:
@@ -88,16 +92,27 @@ class Session(object):
                     self.tab += 1
                     tabbables = [u for u in self.grid.units if u.ready
                                  and u.team is self.grid.current_team()]
-                    self.tab %= len(tabbables)
-                    u = tabbables[self.tab]
-                    cx,cy = u.x,u.y
+                    if len(tabbables):
+                        self.tab %= len(tabbables)
+                        u = tabbables[self.tab]
+                        cx,cy = u.x,u.y
                 if (self.cursor != (cx,cy)):
                     self.cursor = cx,cy
-                    self.action.update(self.cursor, self.grid)
+                    info = self.action.info(self.cursor, self.grid)
                 if c == "enter":
                     result = self.action.perform(self.cursor, self.grid)
                     self.inputs.append(self.cursor)
                 self.cursor_sprite.move_to(cx,cy)
+            elif self.action.form == rules.FORM_MENU:
+                if c:
+                    val = self.menu.handle_input(c)
+                    if val:
+                        self.inputs.append(val)
+                        result = self.action.perform(val, self.grid)
+                        self.menu = None
+                    else:
+                        info = self.action.info(self.menu.info(), self.grid)
+
                     
         # If we got a result from performing an action, we will be given
         # either an order or a new action to perform. The orders tell us that
@@ -105,7 +120,8 @@ class Session(object):
         # undo our mess.
         if result:
             if result == rules.ACT_COMMIT:
-                self.history.append((copy.deepcopy(self.checkpoint), self.inputs))
+                self.history.append((copy.deepcopy(self.checkpoint),
+                                     self.inputs))
                 self.checkpoint = copy.deepcopy(self.grid)
                 self.action = rules.Begin()
             elif result == rules.ACT_TRASH:
@@ -149,19 +165,21 @@ class Session(object):
                 self.action = result
             
             # Set up various UI candy.
-            if self.highlight:
-                self.highlight.kill()
-                self.highlight = None
             if self.action.form == rules.FORM_COORD:
+                self.highlight.kill()
                 self.highlight = sprites.Sprite(0,0,self.grid.w,self.grid.h,50)
                 c = None
-                u = self.grid.unit_at(cx,cy)
-                if u:
-                    c = u.team.color
                 for (x,y) in self.action.choices:
+                    t,u = self.grid.get_at(x,y)
+                    if u: c = u.team.color
+                    elif t.team: c = t.team.color
+                    else: c = self.grid.current_team().color
                     self.highlight.putc(None,x,y,c,None,False,True)
                 self.grid_sprite.add_sprite(self.highlight)
                 self.animation = 0.0
+            elif self.action.form == rules.FORM_MENU:
+                self.menu = widgets.Menu(self.action.choices)
+                self.grid_sprite.add_sprite(self.menu.sprite)
 
     # The session has multiple sprites that need to be rendered, from the
     # view of the grid to the mutliple popups that need to appear.

@@ -7,15 +7,19 @@
 # deep copies of the grid. Whenever a move is undo, a previous deepcopy is
 # popped from the action stack. Sprites must follow the same rules.
 
-from . import entities
+from . import entities, log
 
 from graphics import sprites
 
-# The grid is made up 
+# The grid is made up tiles that can hold units. It's essentially a data
+# storage class that also has mutator methods for interacting with units.
+# The grid keeps a copy of the rules cached so that new units and tiles
+# can be created using just their names.
 class Grid(object):
     def __init__(self, data, rules):
         self.w = data["w"]
         self.h = data["h"]
+        self.rules = dict(rules)
 
         # Create the main sprite. This sprite will be added to the sprite
         # manager in the session object. When a deepcopy is made, this sprite
@@ -67,7 +71,6 @@ class Grid(object):
                     u.team = self.teams[udata["team"]]
                     u.x = x
                     u.y = y
-                    self.units.append(u)
                     u.sprite.putc(u.icon,0,0,u.team.color,"X",True,False)
                     u.sprite.move_to(x,y)
                     self.sprite.add_sprite(u.sprite)
@@ -110,7 +113,7 @@ class Grid(object):
             return None
         tile, test = self.get_at(unit.x, unit.y)
         if test is not unit:
-            raise Exception("Unit mismatch at %d,%d"%(unit.x,unit.y))
+            raise Exception("Unit mismatch at %d,%d"%(unit.x,unit.y ))
         return tile
         
     # Get the unit at X,Y
@@ -190,8 +193,7 @@ class Grid(object):
     # Return the current team.
     def current_team(self):
         t = self.teams[self.turn]
-        if t.active: return t
-        return None
+        return t
 
     # This ends the turn and passes play to the next player. All units are set
     # to acive. If a player has won the game at this point, set the winner
@@ -221,15 +223,17 @@ class Grid(object):
             for tile in self.all_tiles():
                 if tile.team is cur:
                     u = tile.unit
-                    if u and u.team and u.name in tile.repair:
-                        u.fuel = u.fuel_max
-                        u.ammo = u.ammo_max
+                    if (u and u.team and tile.can_repair
+                          and u.unit in tile.repairs):
+                        u.fuel = u.max_fuel
+                        u.ammo = u.max_ammo
                     
                     # Repairing a unit forfeits that tile's income.
-                    if u and u.team is cur and u.hp<100 and u.name in tile.repair:
+                    if (u and u.team is cur and u.hp < 100
+                          and u.name in tile.repairs and tile.can_repair):
                         u.hp = min(100,u.hp+tile.repair[u.name])
                     else:
-                        t.cash += tile.income
+                        cur.cash += tile.income
 
         # Determine the winning team (if one exists).
         winner = True
@@ -238,7 +242,7 @@ class Grid(object):
                 if not at.is_allied(ot):
                     winner = False
         if winner:
-            self.winners = [t for t in self.grid.teams if t.active]
+            self.winners = [t for t in self.teams if t.active]
 
     # Moves a unit from the old tile to the new tile. Will
     # throw exception if move is illegal. CHECK FIRST.
@@ -299,7 +303,7 @@ class Grid(object):
     def remove_unit(self, unit):
         tile = self.utile(unit)
         if tile:
-            tile.unit = False
+            tile.unit = None
         
         if unit in self.units:
             self.units.remove(unit)

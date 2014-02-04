@@ -36,9 +36,9 @@ class Glyph(object):
         if self.invert: s += "?"
         return s
 
-# Sprites are drawables that are smart enough to know when to spend time drawing
-# and when to not. Sprites can contain subsprites in layers allowing them to
-# serve as sprite managers.
+# Sprites are drawables that are smart enough to know when to spend time
+# drawing and when to not. Sprites can contain subsprites in layers allowing
+# them to serve as sprite managers.
 class Sprite(object):
     def __init__(self, x, y, w, h, layer=0, timer=None):
         self.reset(x, y, w, h, layer)
@@ -105,8 +105,8 @@ class Sprite(object):
         for (i,j) in update:
             dx = i+x+self.x
             dy = j+y+self.y
-            if (dx >= bounds[0] and dy >= bounds[1] and i < self.w and i >= 0 and
-                     j < self.h and dx < bounds[2] and dy < bounds[3] and j >= 0):
+            if (dx >= bounds[0] and dy >= bounds[1] and i<self.w and i >= 0 and
+                     j < self.h and dx<bounds[2] and dy<bounds[3] and j >= 0):
                 glyph = self.surface[j][i]
                 if glyph:
                     gfx.draw(dx,dy,glyph.icon,glyph.color())
@@ -114,12 +114,13 @@ class Sprite(object):
         # Set all the sprites as no longer having been moved.
         for s in self.sprites:
             if s.visible:
-                s.render(x+self.x,y+self.y, bounds, [(i-s.x,j-s.y) for (i,j) in update])
+                s.render(x+self.x,y+self.y, bounds, [(i-s.x,j-s.y)
+                                                     for (i,j) in update])
             s.moved = False
         
         # Set this sprite as no longer dirty. If any children died due to the
-        # timer clock running out, store their information in self.dirty so that
-        # the next pass overwrites them.
+        # timer clock running out, store their information in self.dirty so
+        # that the next pass overwrites them.
         self.dirty = []
         oldsprites = self.sprites
         self.sprites = []
@@ -182,8 +183,8 @@ class Sprite(object):
         self.sprites.append(sprite)
         self.sprites.sort(key=lambda s:s.layer)
     
-    # This sets a sprite and all of its subsprites as dead. They will be removed
-    # from their managers in the next update.
+    # This sets a sprite and all of its subsprites as dead. They will be
+    # removed from their managers in the next update.
     def kill(self):
         self.alive = False
         for s in self.sprites:

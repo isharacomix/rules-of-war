@@ -30,6 +30,7 @@ class Tile(object):
         self.income = data.get("income",0)
         self.hp = 100
         self.team = None
+        self.unit = None
 
         # Set the flag properties for the terrain.
         self.can_build = "build" in data["properties"]
@@ -132,5 +133,10 @@ class Unit(object):
         if self.team.is_allied(other) or self.team.is_allied(other.team):
             return True
         return False
+
+    # Mark the unit as done (not ready and grayed out).
+    def done(self):
+        self.ready = False
+        self.sprite.colorize(fg="x")
 
 

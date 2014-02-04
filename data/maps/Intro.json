@@ -103,16 +103,16 @@
         }, 
         "terrain": {
             "City": {
-                "repair": {
+                "repairs": {
                     "APC": 20, 
                     "Infantry": 40, 
                     "Tank": 20, 
                     "Artillery": 20
                 }, 
                 "color": "w", 
-                "cash": 1000, 
+                "income": 1000, 
                 "cover": 3, 
-                "build": {}, 
+                "builds": {}, 
                 "properties": [
                     "capture", 
                     "repair"
@@ -128,7 +128,7 @@
             "HQ": {
                 "color": "w", 
                 "cover": 3, 
-                "cash": 1000, 
+                "income": 1000, 
                 "properties": [
                     "capture", 
                     "hq"
@@ -136,16 +136,16 @@
                 "icon": "!"
             }, 
             "Factory": {
-                "repair": {
+                "repairs": {
                     "APC": 20, 
                     "Infantry": 40, 
                     "Tank": 20, 
                     "Artillery": 20
                 }, 
                 "color": "w", 
-                "cash": 1000, 
+                "income": 1000, 
                 "cover": 3, 
-                "build": {
+                "builds": {
                     "APC": 3000, 
                     "Infantry": 1000, 
                     "Tank": 5000, 
