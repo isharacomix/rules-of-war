@@ -142,6 +142,18 @@ class Sprite(object):
             return True
         return False
 
+    # This allows you to recolor a cell or change the letter without changing
+    # the color.
+    def mixc(self, c, x, y, fg=None, bg=None, bold=False, invert=False):
+        g = Glyph(c,fg,bg,bold,invert)
+        if self.surface[y][x]:
+            g = self.surface[y][x].mix(g)
+        if x >= 0 and x < self.w and y >= 0 and y < self.h:
+            self.surface[y][x] = g
+            self.dirty.append((x,y))
+            return True
+        return False
+
     # This fills all of the glyphs with the same character.
     def fill(self, c, fg=None, bg=None, bold=False, invert=False):
         for i in range(self.w):

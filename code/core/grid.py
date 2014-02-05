@@ -141,12 +141,11 @@ class Grid(object):
 
     # Get a range of coordinates, usually for an attack range. Coordinates
     # may not actually be cells.
-    def get_range(self, center, start, end=None):
+    def get_range(self, x, y, start, end=None):
         if end is None:
             end = start
 
         report = []
-        x,y = center
         for r in range(start,end+1):
             for i in range(r):
                 report.append((x+(r-i),y+i    ))
@@ -154,31 +153,6 @@ class Grid(object):
                 report.append((x-(r-i),y-i    ))
                 report.append((x+i    ,y-(r-i)))
         return report
-
-    # Get movement range of a unit. Returns all possible tiles that can be
-    # destinations. Some destinations are things like other units (for merging
-    # or loading). TODO, calc fuel cost and shortest path.
-    def get_move_range(self, unit):
-        report = []
-        def _floodfill(pos,r,top=False):
-            a,b = pos
-            t,u = self.get_at(a,b)
-            if t and (not u or u.is_allied(unit)):
-                if not top:
-                    r -= unit.over.get(t.terrain,r)
-                if (a,b) not in report and t.terrain in unit.over:
-                    report.append((a,b))
-                if r > 0:
-                    _floodfill((a-1,b),r)
-                    _floodfill((a+1,b),r)
-                    _floodfill((a,b-1),r)
-                    _floodfill((a,b+1),r)
-        _floodfill((unit.x,unit.y),unit.move,True)
-        
-        return [(x,y) for (x,y) in report if (not self.unit_at(x,y) or
-                                              self.unit_at(x,y) and
-                                              self.unit_at(x,y).team is
-                                              unit.team)]
 
     # Return distance (zero norm) between two points.
     def dist(self, start, end):
@@ -223,15 +197,14 @@ class Grid(object):
             for tile in self.all_tiles():
                 if tile.team is cur:
                     u = tile.unit
-                    if (u and u.team and tile.can_repair
-                          and u.unit in tile.repairs):
+                    if (u and u.team is cur and u.unit in tile.repair):
                         u.fuel = u.max_fuel
                         u.ammo = u.max_ammo
                     
                     # Repairing a unit forfeits that tile's income.
                     if (u and u.team is cur and u.hp < 100
-                          and u.name in tile.repairs and tile.can_repair):
-                        u.hp = min(100,u.hp+tile.repair[u.name])
+                          and u.unit in tile.repair):
+                        u.hp = min(100,u.hp+tile.repair[u.unit])
                     else:
                         cur.cash += tile.income
 

@@ -91,7 +91,8 @@ class Session(object):
                 if c == "\t":
                     self.tab += 1
                     tabbables = [u for u in self.grid.units if u.ready
-                                 and u.team is self.grid.current_team()]
+                                 and u.team is self.grid.current_team()
+                                 and u.x is not None and u.y is not None]
                     if len(tabbables):
                         self.tab %= len(tabbables)
                         u = tabbables[self.tab]
@@ -170,9 +171,11 @@ class Session(object):
                 self.highlight = sprites.Sprite(0,0,self.grid.w,self.grid.h,50)
                 c = None
                 for (x,y) in self.action.choices:
-                    t,u = self.grid.get_at(x,y)
-                    if u: c = u.team.color
-                    elif t.team: c = t.team.color
+                    t1,u1 = self.grid.get_at(x,y)
+                    t2,u2 = self.grid.get_at(cx,cy)
+                    if u1: c = u1.team.color
+                    elif t1 and t1.team: c = t1.team.color
+                    elif u2: c = u2.team.color
                     else: c = self.grid.current_team().color
                     self.highlight.putc(None,x,y,c,None,False,True)
                 self.grid_sprite.add_sprite(self.highlight)
@@ -191,6 +194,8 @@ class Session(object):
                 self.highlight.hide()
             elif self.highlight and not self.highlight.visible:
                 self.highlight.show()
+                for u in self.grid.units:
+                    u.cycle_anim()
         self.grid_sprite.render(0,0)
 
 

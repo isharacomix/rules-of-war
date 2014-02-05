@@ -2,121 +2,63 @@
     "rules": {
         "units": {
             "APC": {
-                "capacity": 1, 
+                "capacity": 2, 
                 "move": 5, 
+		"fuel": 50,
+		"ammo": 0,
                 "terrain": {
                     "City": 1, 
                     "Grass": 1, 
                     "HQ": 1, 
                     "Factory": 1
                 }, 
-                "damage": {}, 
+                "primary": {}, 
+                "secondary": {}, 
                 "range": [
-                    1, 
-                    1
+                    0, 
+                    0
                 ], 
                 "carry": [
                     "Infantry"
-                ], 
-                "properties": [
-                    "carry"
                 ], 
                 "icon": "P"
             }, 
             "Infantry": {
                 "capacity": 0, 
                 "description": "Infantry are the cheapest unit and capture.", 
-                "move": 3, 
+                "move": 8, 
                 "fuel": 50,
                 "ammo": 50,
-                "over": {
+		"capture": 100,
+                "terrain": {
                     "City": 1, 
                     "Grass": 1, 
                     "HQ": 1, 
-                    "Mountains": 2
+                    "Mountains": 2,
+		    "Factory": 1
                 }, 
                 "primary": {
                     "APC": 10, 
-                    "Infantry": 30, 
-                    "Tank": 10, 
-                    "Artillery": 10
+                    "Infantry": 80
                 }, 
                 "range": [
                     1, 
                     1
-                ], 
-                "properties": [
-                    "capture"
                 ], 
                 "icon": "i"
-            }, 
-            "Tank": {
-                "capacity": 0, 
-                "move": 5, 
-                "terrain": {
-                    "City": 1, 
-                    "Grass": 1, 
-                    "HQ": 1, 
-                    "Factory": 1
-                }, 
-                "damage": {
-                    "APC": 60, 
-                    "Infantry": 40, 
-                    "Tank": 60, 
-                    "Artillery": 60
-                }, 
-                "range": [
-                    1, 
-                    1
-                ], 
-                "properties": [], 
-                "icon": "T"
-            }, 
-            "Artillery": {
-                "capacity": 0, 
-                "description": "Artillery have range but are defenseless.", 
-                "move": 5, 
-                "terrain": {
-                    "City": 1, 
-                    "Grass": 1, 
-                    "HQ": 1, 
-                    "Factory": 1
-                }, 
-                "damage": {
-                    "APC": 70, 
-                    "Infantry": 70, 
-                    "Tank": 40, 
-                    "Artillery": 70
-                }, 
-                "range": [
-                    2, 
-                    3
-                ], 
-                "carry": [
-                    "Infantry"
-                ], 
-                "properties": [
-                    "indirect"
-                ], 
-                "icon": "L"
             }
         }, 
         "terrain": {
             "City": {
-                "repairs": {
+                "repair": {
                     "APC": 20, 
-                    "Infantry": 40, 
-                    "Tank": 20, 
-                    "Artillery": 20
-                }, 
+                    "Infantry": 40
+                },
                 "color": "w", 
                 "income": 1000, 
                 "cover": 3, 
-                "builds": {}, 
-                "properties": [
-                    "capture", 
-                    "repair"
-                ], 
+                "build": {}, 
+		"capture": true,
                 "icon": "#"
             }, 
             "Mountains": {
@@ -129,33 +71,23 @@
                 "color": "w", 
                 "cover": 3, 
                 "income": 1000, 
-                "properties": [
-                    "capture", 
-                    "hq"
-                ], 
+		"capture": true,
+		"hq": true,
                 "icon": "!"
             }, 
             "Factory": {
-                "repairs": {
+                "repair": {
                     "APC": 20, 
-                    "Infantry": 40, 
-                    "Tank": 20, 
-                    "Artillery": 20
+                    "Infantry": 40
                 }, 
                 "color": "w", 
                 "income": 1000, 
                 "cover": 3, 
-                "builds": {
+                "build": {
                     "APC": 3000, 
-                    "Infantry": 1000, 
-                    "Tank": 5000, 
-                    "Artillery": 7000
+                    "Infantry": 1000
                 }, 
-                "properties": [
-                    "capture", 
-                    "build", 
-                    "repair"
-                ], 
+		"capture": true,
                 "icon": "$"
             }, 
             "Ocean": {
