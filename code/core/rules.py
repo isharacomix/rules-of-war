@@ -53,7 +53,7 @@ class Begin(Action):
         t,u = grid.get_at(x,y)
         if u:
             return Move(x,y,grid)
-        elif len(t.build) > 0 and t.team is grid.current_team():
+        elif t and len(t.build) > 0 and t.team is grid.current_team():
             return Build(x,y,grid)
         else:
             return Main_Menu()
