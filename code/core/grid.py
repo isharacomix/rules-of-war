@@ -7,7 +7,7 @@
 # deep copies of the grid. Whenever a move is undo, a previous deepcopy is
 # popped from the action stack. Sprites must follow the same rules.
 
-from . import entities, log
+from . import entities, widgets, log
 
 from graphics import sprites
 
@@ -39,6 +39,7 @@ class Grid(object):
         
         # Load the teams first, since cells and units reference them.
         # Then set up the alliances.
+        self.name = data["name"]
         for t in data["teams"]:
             this = entities.Team(t)
             self.teams.append(this)
@@ -193,6 +194,8 @@ class Grid(object):
 
         # Repair units and draw income.
         cur = self.current_team()
+        msg = "Day %d - %s\n%s, move out!"%(self.day, self.name, cur.name)
+        self.alerts.append((widgets.Notification(msg,100,cur.color),"center"))
         if cur:
             for tile in self.all_tiles():
                 if tile.team is cur:

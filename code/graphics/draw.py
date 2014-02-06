@@ -31,10 +31,9 @@ def fill(x,y,w,h,c=" ",fg="w",bg="X",bold=False,invert=False,layer=0):
 
 
 # This draws a border around the box defined by x,y,w,h.
-def border(x,y,w,h,code="--||+ ",fg="w",bg="X",bold=False,invert=False,layer=0):
+def border(x,y,w,h,code="--||+",fg="w",bg="X",bold=False,invert=False,layer=0):
     report = sprites.Sprite(x,y,w,h,layer)
-    top,bottom,left,right,corner,fill = code
-    report.fill(fill,fg,bg,bold,invert)
+    top,bottom,left,right,corner = code
     for i in range(w):
         report.putc(top,i,0,fg,bg,bold,invert)
         report.putc(bottom,i,h-1,fg,bg,bold,invert)

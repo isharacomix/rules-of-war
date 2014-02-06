@@ -3,7 +3,7 @@
 # new action. Each action can also contain a sprite that should be killed
 # after "perform" and modified during "update".
 
-from . import entities
+from . import entities, widgets
 
 
 FORM_COORD = "coord"
@@ -74,9 +74,12 @@ class Main_Menu(Action):
         if act == "Close":
             return ACT_TRASH
         if act == "Surrender":
-            grid.purge( grid.current_team() )
-            grid.current_team().active = False
-            # TODO announce that team has lost
+            cur = grid.current_team()
+            grid.purge( cur )
+            cur.active = False
+            msg = "%s has been defeated!"%(cur.name)
+            grid.alerts.append((widgets.Notification(msg,200,cur.color),
+                                "center"))
             return ACT_COMMIT
         if act == "End Turn":
             return ACT_END
@@ -173,10 +176,15 @@ class Move(Action):
         # mover or the mover and landing unit can be joined.
         if (u2 and u2.unit == u1.unit and u1 is not u2):
             grid.remove_unit(u1)
+            start = min(u1.hp,u2.hp)
             u2.hp = min(u1.hp+u2.hp,100)
             u2.fuel = min(u1.fuel+u2.fuel,u2.max_fuel)
             u2.ammo = min(u1.ammo+u2.ammo,u2.max_ammo)
             u2.done()
+            w1 = widgets.Counter(start,u2.hp,0,
+                                 u2.hp-start+100,u2.team.color)
+            grid.alerts.append((w1,"ul"))
+
             return ACT_COMMIT
         if (u2 and u2.capacity > 0 and u1.unit in u2.carry and
            len(u2.carrying) < u2.capacity and u1 is not u2):
@@ -242,7 +250,10 @@ class Unit_Act(Action):
                 if t.is_hq and t.team:
                     grid.purge(t.team)
                     t.team.active = False
-                    #message t.team loses
+                    msg = "%s has been defeated!"%(t.team.name)
+                    grid.alerts.append((widgets.Notification(msg,200,
+                                                            t.team.color),
+                                                            "center"))
                     t.is_hq = False
                     for (tx,ty) in grid.all_tiles_xy():
                         ot = grid.tile_at(tx,ty)
@@ -308,8 +319,15 @@ class Attack(Action):
                 if d_dmg: atk_u.hp = max(0,atk_u.hp-d_dmg)
                 if prim: def_u.ammo -= 1
 
-            # draw hp countdown from start_ahp to atk_u.hp
-            # draw hp countdown from start_dhp to def_u.hp
+            # Draw damage animations
+            t1 = start_dhp-def_u.hp
+            t2 = start_ahp-atk_u.hp
+            w1 = widgets.Counter(start_dhp,def_u.hp,0,
+                                 t1+t2+100,def_u.team.color)
+            grid.alerts.append((w1,"ul"))
+            w2 = widgets.Counter(start_ahp,atk_u.hp,t1,
+                                 t1+t2+100,atk_u.team.color)
+            grid.alerts.append((w2,"br"))
 
             # Remove dead units (and all carriees) from grid.
             if atk_u.hp > 0:
@@ -329,7 +347,9 @@ class Attack(Action):
             for (score,team) in ((ateam,atk_u.team),(dteam,def_u.team)):
                 if score == 0:
                     team.active = False
-                    #print messagfe
+                    msg = "%s has been defeated!"%(team.name)
+                    grid.alerts.append((widgets.Notification(msg,200,
+                                                team.color),"center"))
 
             return ACT_COMMIT
         else:

@@ -81,8 +81,13 @@ class Sprite(object):
     # This will pass back up a dictionary of transparent cells to the parent
     # to be drawn over.
     def render(self, x, y, bounds=None, update=None):
+        newbounds = ( x+self.x, y+self.y, x+self.x+self.w, y+self.y+self.h )
         if not bounds:
-            bounds = ( x+self.x, y+self.y, x+self.x+self.w, y+self.y+self.h )
+            bounds = newbounds
+        else:
+            a1,b1,c1,d1 = newbounds
+            a2,b2,c2,d2 = bounds
+            bounds = max(a1,a2),max(b1,b2),min(c1,c2),min(d1,d2)
         
         # If the timer is exhausted, kill the sprite.
         if self.timer:
